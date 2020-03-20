@@ -73,7 +73,7 @@ disk=60G
 Which will output something like this:
 
 ```
-Starting uyour_configuration_file.conf
+Starting your_configuration_file.conf
  - QEMU:     /snap/bin/qemu-virgil v4.2.0
  - BIOS:     Legacy
  - Disk:     focal-desktop-amd64.qcow2 (64G)
