@@ -122,17 +122,16 @@ function vm_boot() {
 
   if [ ! -f "${disk_img}" ]; then
     # If there is no disk image, create a new image.
-    echo " - Creating a new image."
     touch "${disk_img}"
     ${QEMU_IMG} create -q -f qcow2 "${disk_img}" "${disk}"
-    echo "             - Just created, booting from ${iso}."
+    echo "             - Just created a new image, booting from ${iso}."
     if [ $? -ne 0 ]; then
       echo " - ERROR! Failed to create ${disk_img} of ${disk}. Stopping here."
       exit 1
     fi
     echo " - ISO:      ${iso}"
   else
-  	# Check there isn't already a process attached to the disk image.
+  	# Check if there isn't already a process attached to the disk image.
   	QEMU_LOCK_TEST=$(${QEMU_IMG} info ${disk_img} 2>/dev/null)
   	if [ $? -ne 0 ]; then
     	echo "             - Failed to get \"write\" lock. Is another process using the disk?"
@@ -180,9 +179,9 @@ function vm_boot() {
   local ram="2G"
   local allram=$(free --mega -h | grep Mem | cut -d':' -f2 | cut -d'G' -f1 | sed 's/ //g')
   if [ ${allram} -ge 64 ]; then
-    ram="4G"
+    ram="16G"
   elif [ ${allram} -ge 16 ]; then
-    ram="3G"
+    ram="4G"
   fi
 
   if [ ! -z "${ram_gb}" ]; then
