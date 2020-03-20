@@ -48,7 +48,7 @@ The Windows installer won't recognize your virtual HDD, which is (kind of) norma
 
  * Download the complete [virtio drivers ISO file](https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/latest-virtio/virtio-win.iso), rename it to whatever you want (example : `virtio_drivers.iso`) then place it wherever you want (example : in the directory where there is MyFastEmulator).
  
- * Edit the `quickemu.sh` file with Sublime Text for example, then search for the line `# Boot the iso image`. Below the first `-drive` line, add `-drive "file=virtio_drivers.iso,index=0,media=cdrom" \`. Save the file, and close it.
+ * Edit the `quickemu` file with Sublime Text for example, then search for the line `# Boot the iso image`. Below the first `-drive` line, add `-drive "file=virtio_drivers.iso,index=0,media=cdrom" \`. Save the file, and close it.
  
  * Boot the VM into the Windows installer of your choice (7, 10, etc...). Now, where the partitions should appear, click `Load driver`. In the following message box, click `Browse`, then go to the mounted ISO file, then go to `amd64`, then click on the folder that matches the Windows version you're installing (for example, win7). Now, load the driver, and the partition should appear!
 
@@ -64,10 +64,10 @@ disk=60G
 ```
 (These are only a few options of MyFastEmulator. To see the full list of options, go <a href="#">here</a>.)
 
-  * Use `quickemu.sh` to start the virtual machine:
+  * Use `quickemu` to start the virtual machine:
 
 ```
-./quickemu.sh --vm your_configuration_file.conf
+./quickemu --vm your_configuration_file.conf
 ```
 
 Which will output something like this:
@@ -99,7 +99,6 @@ You can also pass optional parameters
   --snapshot create <tag> : Create a snapshot.
   --snapshot delete <tag> : Delete a snapshot.
   --snapshot info         : Show disk/snapshot info.
-  ---status-quo           : Do not commit any changes to disk/snapshot.
 ```
 
 ## TODO
