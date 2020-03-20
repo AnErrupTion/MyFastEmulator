@@ -42,6 +42,18 @@ snap connect qemu-virgil:removable-media
 
 ## Usage
 
+## FOR WINDOWS
+
+The Windows installer won't recognize your virtual HDD, which is (kind of) normal. To make it detect it, you'll have to manually install the virtio SCSI drivers. To do that, follow the steps below.
+
+ * Download the complete [virtio drivers ISO file](https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/latest-virtio/virtio-win.iso), rename it to whatever you want (example : `virtio_drivers.iso`) then place it wherever you want (example : in the directory where there is MyFastEmulator).
+ 
+ * Edit the `quickemu.sh` file with Sublime Text for example, then search for the line `# Boot the iso image`. Below the first `-drive` line, add `-drive "file=virtio_drivers.iso,index=0,media=cdrom" \`. Save the file, and close it.
+ 
+ * Boot the VM into the Windows installer of your choice (7, 10, etc...). Now, where the partitions should appear, click `Load driver`. In the following message box, click `Browse`, then go to the mounted ISO file, then go to `amd64`, then click on the folder that matches the Windows version you're installing (for example, win7). Now, load the driver, and the partition should appear!
+
+## FOR LINUX
+
   * Download an ISO image of a Linux distribution
   * Create a VM configuration file, for example `your_configuration_file.conf`
 
