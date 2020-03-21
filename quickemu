@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+export LC_ALL=C
 
 function disk_delete() {
   if [ -e "${disk_img}" ]; then
@@ -89,11 +90,36 @@ function vm_boot() {
   local VMNAME=$(basename ${VM} .conf)
   local VMDIR=$(dirname ${disk_img})
   local BIOS=""
+  local GL="on"
   local VIRGL="on"
   local UI="gtk"
   local QEMU_VER=$(${QEMU} -version | head -n1 | cut -d' ' -f4 | cut -d'(' -f1)
   echo " - Initializing \"${VM}\"'s settings."
   echo " - QEMU:     ${QEMU} v${QEMU_VER}"
+
+  if [ ! -z "${guest_ui}" ]; then
+    echo " - Guest UI choosed by user."
+    UI="${guest_ui}"
+  fi
+  echo " - UI:       ${UI}"
+
+  if [ ! -z "${guest_gl}" ]; then
+    echo " - Guest GL choosed by user."
+    GL="${guest_gl}"
+  fi
+  echo " - GL:       ${Gl}"
+
+  if [ "${UI}" == "gtk" ]; then
+    echo " - GTK is currently not compatible with GL, turning GL off."
+    GL="off"
+  fi
+
+  if [ ! -z "${guest_virgl}" ]; then
+    echo " - Guest VirGL choosed by user."
+    VIRGL="${guest_virgl}"
+  fi
+  echo " - VIRGL (Virgil3D):    ${VIRGL}"
+  echo " - Currently, VirGL is not supported."
 
   local disk_curr_size=$(stat -c%s "${disk_img}")
   if [ -z "${disk}" ]; then
@@ -155,6 +181,18 @@ function vm_boot() {
     echo "              - Existing disk state will be preserved, no changes to the disk/snapshot will be committed."
   fi
 
+  # Check if there is a boot ISO (containing the installer)
+  if [ -n "${iso}" ] && [ -e "${iso}" ]; then
+    local ISO_BOOT="-drive media=cdrom,file="${iso}",index=2"
+    echo " - ISO Boot:     ${iso}"
+  fi
+
+  # Check if there is a driver ISO (for Windows installers)
+  if [ -n "${driver_iso}" ] && [ -e "${driver_iso}" ]; then
+    local ISO_DRIVER="-drive media=cdrom,file="${driver_iso}",index=3"
+    echo " - Windows VirtIO Drivers:  ${driver_iso}"
+  fi
+
   local cores="1"
   local allcores=$(nproc --all)
   if [ ${allcores} -ge 8 ]; then
@@ -190,26 +228,14 @@ function vm_boot() {
   fi
   echo " - RAM:      ${ram}"
 
-  local display=""
-
   # Determine what display to use
+  local display=""
   if [ ! -z "${vga_adapter}" ]; then
-  	echo " - VGA adapter choosed by user."
-    display="-display ${UI} -vga ${vga_adapter}"
+    echo " - VGA adapter choosed by user."
+    display="${UI},gl=${GL} -vga ${vga_adapter}"
   else
-  	display="-display ${UI} -vga virtio"
+    display="${UI},gl=${GL} -vga virtio"
   fi
-
-  if [ ! -z "${guest_ui}" ]; then
-  	echo " - Guest UI choosed by user."
-    UI="${guest_ui}"
-  fi
-  echo " - UI:       ${UI}"
-  if [ ! -z "${guest_virgl}" ]; then
-  	echo " - Guest VirGL choosed by user."
-    VIRGL="${guest_virgl}"
-  fi
-  echo " - VIRGL:    ${VIRGL}"
 
   local xres=1152
   local yres=648
@@ -240,14 +266,14 @@ function vm_boot() {
   fi
   echo " - Display:  ${xres}x${yres}"
 
-
-  local NET=""
+  # Set the hostname of the VM
+  local NET="user,hostname=${VMNAME}"
   # If smbd is available, export $HOME to the guest via samba
   if [ -e /snap/qemu-virgil/current/usr/sbin/smbd ]; then
-      NET=",smb=${HOME}"
+      NET="${NET},smb=${HOME}"
   fi
 
-  if [ -n "${NET}" ]; then
+  if [[ ${NET} == *"smb"* ]]; then
     echo " - smbd:     ${HOME} will be exported to the guest via smb://10.0.2.4/qemu"
   else
     echo " - smbd:     ${HOME} will not be exported to the guest. 'smbd' not found."
@@ -266,24 +292,25 @@ function vm_boot() {
   echo " - Launching \"${VM}\" with requested settings."
   ${QEMU} -name ${VMNAME},process=${VMNAME} \
     ${BIOS} \
-    -cdrom "${iso}" \
-    -drive "file=${disk_img},format=qcow2,if=virtio,aio=native,cache.direct=on" \
-    -drive "file=virtio_drivers.iso,index=0,media=cdrom" \
+    -drive id=disk,file=${disk_img},format=qcow2,if=virtio,aio=native,cache.direct=on \
+    ${ISO_BOOT} ${ISO_DRIVER} \
     -enable-kvm \
     -machine q35,accel=kvm \
     -cpu ${acpu},kvm=on \
-    -m ${ram} \
     -smp cores=${cores} \
-    -net nic,model=virtio \
-    -net user"${NET}" \
+    -m ${ram} \
+    -device virtio-balloon
+    -netdev ${NET},id=nic \
+    -device virtio-net,netdev=nic \
     -rtc base=localtime,clock=host \
     -serial mon:stdio \
-    -audiodev pa,id=pa,server=unix:$XDG_RUNTIME_DIR/pulse/native,out.stream-name=${LAUNCHER}-${VMNAME},in.stream-name=${LAUNCHER}-${VMNAME} \
+    -audiodev pa,id=pa,server=unix:${XDG_RUNTIME_DIR}/pulse/native,out.stream-name=${LAUNCHER}-${VMNAME},in.stream-name=${LAUNCHER}-${VMNAME} \
     -device intel-hda -device hda-duplex,audiodev=pa \
-    -usb -device usb-kbd -device usb-tablet \
+    -device qemu-xhci,id=xhci,p2=8,p3=8 -device usb-kbd -device usb-tablet \
     -object rng-random,id=rng0,filename=/dev/urandom \
     -device virtio-rng-pci,rng=rng0 \
-    ${display} ${STATUSQUO} \
+    -display ${display} \
+    ${STATUSQUO} \
     "$@"
 }
 

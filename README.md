@@ -13,7 +13,7 @@
 MyFastEmulator is a fork of the <a href="https://github.com/wimpysworld/quickemu">Quickemu</a> which aims to be a more complete and user-friendly version than Quickemu. But overall, it's a very simple script to "manage" QEMU virtual machines. Each
 virtual machine configuration is requiring minimal but very useful configuration, such as total CPU cores, emulated cpu, RAM, and even more. The
 main objective of the project is to enable quick testing of desktop Linux
-distributions (and maybe even Windows, who knows...) where the virtual machines can be stored anywhere, such as
+distributions AND Windows operating systems where the virtual machines can be stored anywhere, such as
 external USB storage.
 
 MyFastEmulator is faster than its competitors, for a few reasons. First, it uses emulation rather than pure virtualization. This allows, for example, to use a CPU NOT matching the host one. This also allows better VM performance and less CPU usage since it won't directly use the host CPU. Second, it's very minimal compareed to virt-manager, for example. It requires very minimal configuration and doesn't have too much features. And lastly, because it uses KVM as the main accelerator. VMware just can't use KVM, while VirtualBox "sort of can" use it as an option (however, KVM on Windows isn't real KVM as we all know). virt-manager, on the other hand, uses KVM. But it's not as fast as MyFastEmulator. MyFastEmulator is also a frontend to the fully
@@ -44,13 +44,15 @@ snap connect qemu-virgil:removable-media
 
 ## FOR WINDOWS
 
-The Windows installer won't recognize your virtual HDD, which is (kind of) normal. To make it detect it, you'll have to manually install the virtio SCSI drivers. To do that, follow the steps below.
+The Windows installer won't recognize your virtual HDD, which is (kind of) normal. To make it detect it, you'll have to install the VirtIO SCSI drivers. To do that, follow the steps below.
 
- * Download the complete [virtio drivers ISO file](https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/latest-virtio/virtio-win.iso), rename it to whatever you want (example : `virtio_drivers.iso`) then place it wherever you want (example : in the directory where there is MyFastEmulator).
+ * Download the complete [VirtIO drivers ISO file](https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/latest-virtio/virtio-win.iso), rename it to whatever you want (example : `virtio_drivers.iso`) then place it wherever you want (example : in the directory where there is MyFastEmulator).
  
- * Edit the `quickemu` file with Sublime Text for example, then search for the line `# Boot the iso image`. Below the first `-drive` line, add `-drive "file=virtio_drivers.iso,index=0,media=cdrom" \`. Save the file, and close it.
+ * Edit your configuration file, and add this line : `driver_iso="virtio_drivers.iso"`. Save the file, and close it.
  
  * Boot the VM into the Windows installer of your choice (7, 10, etc...). Now, where the partitions should appear, click `Load driver`. In the following message box, click `Browse`, then go to the mounted ISO file, then go to `amd64`, then click on the folder that matches the Windows version you're installing (for example, win7). Now, load the driver, and the partition should appear!
+
+ * NOTE : After the installation, use again the mounted CD to install the VirtIO drivers.
 
 ## FOR LINUX
 
@@ -108,5 +110,6 @@ You can also pass optional parameters
   - [x] Make disk image optionally size configurable
   - [x] Improve snapshot management
   - [ ] Create desktop launcher for a VM
-  - [x] Fix Virgil 3D on EFI boot
+  - [ ] Add support for Virgil3D
   - [x] Get QEMU `-audiodev` working for audio input, something like:
+  - [x] Add Windows support
