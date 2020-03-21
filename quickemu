@@ -105,33 +105,35 @@ function vm_boot() {
   echo " - QEMU:     ${QEMU} v${QEMU_VER}"
 
   if [ ! -z "${guest_ui}" ]; then
-    echo " - Guest UI choosed by user."
     UI="${guest_ui}"
+    echo " - UI:       ${UI} (choosed by user)"
+  else
+    echo " - UI:       ${UI}"
   fi
-  echo " - UI:       ${UI}"
 
   if [ ! -z "${guest_gl}" ]; then
-    echo " - Guest GL choosed by user."
     GL="${guest_gl}"
+    echo " - GL:       ${GL} (choosed by user)"
+  else
+    echo " - GL:       ${GL}"
   fi
-  echo " - GL:       ${GL}"
-  echo " - Warning: Some UIs are imcompatible with GL (can make the VM unrunnable), this is still a beta feature."
 
   if [ "${UI}" == "gtk" ]; then
-    echo " - GTK is currently not compatible with GL, turning GL off."
+    echo " - GTK UI is currently not compatible with GL. Turning GL off."
     GL="off"
   fi
 
   if [ "${UI}" == "spice-app" ]; then
-    echo " - spice-app is currently not compatible with GL, turning GL off."
+    echo " - spice-app UI is currently not compatible with GL. Turning GL off."
     GL="off"
   fi
 
   if [ ! -z "${guest_virgl}" ]; then
-    echo " - Guest VirGL choosed by user."
     VIRGL="${guest_virgl}"
+    echo " - VIRGL (Virgil3D):    ${VIRGL} (choosed by user)"
+  else
+    echo " - VIRGL (Virgil3D):    ${VIRGL}"
   fi
-  echo " - VIRGL (Virgil3D):    ${VIRGL}"
 
   if [ ! -z "${efi_bios}" ]; then
     if [ "${efi_bios}" -eq 1 ]; then
@@ -140,11 +142,10 @@ function vm_boot() {
             cp /snap/qemu-virgil/current/usr/share/qemu/edk2-i386-vars.fd ${VMDIR}/${VMNAME}-vars.fd
           fi
           BIOS="-drive if=pflash,format=raw,readonly,file=/snap/qemu-virgil/current/usr/share/qemu/edk2-x86_64-code.fd -drive if=pflash,format=raw,file=${VMDIR}/${VMNAME}-vars.fd"
+          echo " - BIOS:     EFI"
       else
-          echo " - EFI:      Booting requested but no EFI firmware found."
-          echo "             Booting from Legacy BIOS."
+          echo " - EFI:      Booting requested but no EFI firmware found. Booting from Legacy BIOS."
       fi
-      echo " - BIOS:     EFI"
     else
       echo " - BIOS:     Legacy"
     fi
@@ -198,7 +199,7 @@ function vm_boot() {
     fi
   fi
 
-  if [ -e ${disk_img_snapshot} ]; then
+  if [ ! -z ${disk_img_snapshot} ]; then
     echo " - Snapshot: ${disk_img_snapshot}"
   fi
 
@@ -228,31 +229,27 @@ function vm_boot() {
   fi
 
   if [ ! -z "${total_cores}" ]; then
-    echo " - CPU cores choosed by user."
     cores="${total_cores}"
+    echo " - CPU Cores: ${cores} Core(s) (choosed by user)"
+  else
+    echo " - CPU Cores: ${cores} Core(s)"
   fi
-  echo " - CPU Cores: ${cores} Core(s)"
 
   local acpu="host"
   if [ ! -z "${emulated_cpu}" ]; then
-    echo " - Emulated CPU choosed by user."
     acpu="${emulated_cpu}"
+    echo " - Emulated CPU: ${acpu} (choosed by user)"
+  else
+    echo " - Emulated CPU: ${acpu}"
   fi
-  echo " - Emulated CPU: ${acpu}"
 
   local ram="2G"
-  local allram=$(free --mega -h | grep Mem | cut -d':' -f2 | cut -d'G' -f1 | sed 's/ //g')
-  if [ ${allram} -ge 64 ]; then
-    ram="16G"
-  elif [ ${allram} -ge 16 ]; then
-    ram="4G"
-  fi
-
   if [ ! -z "${ram_gb}" ]; then
-    echo " - RAM choosed by user."
     ram="${ram_gb}"
+    echo " - RAM:      ${ram} (choosed by user)"
+  else
+    echo " - RAM:      ${ram}"
   fi
-  echo " - RAM:      ${ram}"
 
   local xres=1152
   local yres=648
@@ -273,13 +270,18 @@ function vm_boot() {
     fi
   fi
 
+  # Guest's max screen resolution
   if [ ! -z "${guest_xres}" ]; then
-    echo " - Guest's width resolution choosed by user."
     xres=${guest_xres}
+    echo " - Width resolution:  ${xres} (choosed by user)"
+  else
+    echo " - Width resolution:  ${xres}"
   fi
   if [ ! -z "${guest_yres}" ]; then
-    echo " - Guest's height resolution choosed by user."
     yres=${guest_yres}
+    echo " - Height resolution:  ${yres} (choosed by user)"
+  else
+    echo " - Height resolution:  ${yres}"
   fi
   echo " - Display:  ${xres}x${yres}"
 
@@ -287,18 +289,16 @@ function vm_boot() {
   local display=""
   if [ ! -z "${vga_adapter}" ]; then
     if [ "${vga_adapter}" == "virtio" ]; then
-      echo " - User choosed VirtIO as VGA adapter."
       display="-device virtio-vga,virgl=${VIRGL},xres=${xres},yres=${yres}"
-      echo " - Video:    VirtIO VGA"
+      echo " - Video:    VirtIO VGA (choosed by user)"
     else
-      echo " - VGA adapter choosed by user, no support for VirGL and custom resolution though."
+      echo " - Warning : ${vga_adapter} will have no support for VirGL and custom resolution."
       display="-vga ${vga_adapter}"
-      echo " - Video:    ${vga_adapter}"
+      echo " - Video:    ${vga_adapter} (choosed by user)"
     fi
   else
-    echo " - User didn't choose VGA adapter, setting default."
     display="-device virtio-vga,virgl=${VIRGL},xres=${xres},yres=${yres}"
-    echo " - Video:    VirtIO VGA (default)"
+    echo " - Video:    VirtIO VGA"
   fi
 
   # Set the hostname of the VM
