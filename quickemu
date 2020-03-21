@@ -11,66 +11,66 @@ function disk_delete() {
 }
 
 function snapshot_apply() {
-	local snapshot_tag="${1}"
-  	if [ -z "${snapshot_tag}" ]; then
-    	echo " - ERROR! No snapshot tag provided."
-    	exit
-  	fi
+  local snapshot_tag="${1}"
+    if [ -z "${snapshot_tag}" ]; then
+      echo " - ERROR! No snapshot tag provided."
+      exit
+    fi
 
-  	if [ -e "${disk_img}" ]; then
-    	${QEMU_IMG} snapshot -q -a "${snapshot_tag}" "${disk_img}"
-    	if [ $? -eq 0 ]; then
-      		echo " - SUCCESS! Applied snapshot ${snapshot_tag} to ${disk_img}."
-    	else
-      		echo " - ERROR! Failed to apply snapshot ${snapshot_id} to ${disk_img}."
-    	fi
-  	else
-    	echo " - ERROR! ${disk_img} not found. Doing nothing."
+    if [ -e "${disk_img}" ]; then
+      ${QEMU_IMG} snapshot -q -a "${snapshot_tag}" "${disk_img}"
+      if [ $? -eq 0 ]; then
+          echo " - SUCCESS! Applied snapshot ${snapshot_tag} to ${disk_img}."
+      else
+          echo " - ERROR! Failed to apply snapshot ${snapshot_id} to ${disk_img}."
+      fi
+    else
+      echo " - ERROR! ${disk_img} not found. Doing nothing."
     fi
 }
 
 function snapshot_create() {
-	local snapshot_tag="${1}"
-  	if [ -z "${snapshot_tag}" ]; then
-    	echo " - ERROR! No snapshot tag provided."
-    	exit
-  	fi
+  local snapshot_tag="${1}"
+    if [ -z "${snapshot_tag}" ]; then
+      echo " - ERROR! No snapshot tag provided."
+      exit
+    fi
 
-  	if [ -e "${disk_img}" ]; then
-  		${QEMU_IMG} snapshot -q -c "${snapshot_tag}" "${disk_img}"
-  		if [ $? -eq 0 ]; then
-      		echo " - SUCCESS! Created snapshot ${snapshot_tag} of ${disk_img}."
-    	else
-      		echo " - ERROR! Failed to create snapshot ${snapshot_id} of ${disk_img}."
-    	fi
+    if [ -e "${disk_img}" ]; then
+      ${QEMU_IMG} snapshot -q -c "${snapshot_tag}" "${disk_img}"
+      if [ $? -eq 0 ]; then
+          echo " - SUCCESS! Created snapshot ${snapshot_tag} of ${disk_img}."
+      else
+          echo " - ERROR! Failed to create snapshot ${snapshot_id} of ${disk_img}."
+      fi
     else
-    	echo " - ERROR! ${disk_img} not found. Doing nothing."
+      echo " - ERROR! ${disk_img} not found. Doing nothing."
     fi
 }
 
 function snapshot_delete() {
-	local snapshot_tag="${1}"
-  	if [ -z "${snapshot_tag}" ]; then
-    	echo " - ERROR! No snapshot tag provided."
-    	exit
-  	fi
+  local snapshot_tag="${1}"
+    if [ -z "${snapshot_tag}" ]; then
+      echo " - ERROR! No snapshot tag provided."
+      exit
+    fi
 
-  	if [ -e "${disk_img}" ]; then
-  		${QEMU_IMG} snapshot -q -d "${snapshot_tag}" "${disk_img}"
-  		if [ $? -eq 0 ]; then
-      		echo " - SUCCESS! Deleted snapshot ${snapshot_tag} of ${disk_img}."
-    	else
-      		echo " - ERROR! Failed to delete snapshot ${snapshot_id} of ${disk_img}."
-    	fi
+    if [ -e "${disk_img}" ]; then
+      ${QEMU_IMG} snapshot -q -d "${snapshot_tag}" "${disk_img}"
+      if [ $? -eq 0 ]; then
+          echo " - SUCCESS! Deleted snapshot ${snapshot_tag} of ${disk_img}."
+      else
+          echo " - ERROR! Failed to delete snapshot ${snapshot_id} of ${disk_img}."
+      fi
     else
-    	echo " - ERROR! ${disk_img} not found. Doing nothing."
+      echo " - ERROR! ${disk_img} not found. Doing nothing."
     fi
 }
 
 function snapshot_info() {
-	if [ -e "${disk_img}" ]; then
-		${QEMU_IMG} info "${disk_img}"
-	fi
+  if [ -e "${disk_img}" ]; then
+    ${QEMU_IMG} info "${disk_img}"
+  fi
 }
 
 function get_port() {
@@ -126,64 +126,72 @@ function vm_boot() {
   fi
   echo " - VIRGL (Virgil3D):    ${VIRGL}"
 
-  local disk_curr_size=$(stat -c%s "${disk_img}")
-  if [ -z "${disk}" ]; then
-  	echo " - Disk size not found, setting default value."
-    disk="64G"
-  fi
-
   if [ ! -z "${efi_bios}" ]; then
-  	if [ "${efi_bios}" -eq 1 ]; then
-  		if [ -e /snap/qemu-virgil/current/usr/share/qemu/edk2-x86_64-code.fd ] ; then
-      		if [ ! -e ${VMDIR}/${VMNAME}-vars.fd ]; then
-      			cp /snap/qemu-virgil/current/usr/share/qemu/edk2-i386-vars.fd ${VMDIR}/${VMNAME}-vars.fd
-      		fi
-      		BIOS="-drive if=pflash,format=raw,readonly,file=/snap/qemu-virgil/current/usr/share/qemu/edk2-x86_64-code.fd -drive if=pflash,format=raw,file=${VMDIR}/${VMNAME}-vars.fd"
-    	else
-      		echo " - EFI:      Booting requested but no EFI firmware found."
-      		echo "             Booting from Legacy BIOS."
-    	fi
-    	echo " - BIOS:     EFI"
-  	else
-  		echo " - BIOS:     Legacy"
-  	fi
+    if [ "${efi_bios}" -eq 1 ]; then
+      if [ -e /snap/qemu-virgil/current/usr/share/qemu/edk2-x86_64-code.fd ] ; then
+          if [ ! -e ${VMDIR}/${VMNAME}-vars.fd ]; then
+            cp /snap/qemu-virgil/current/usr/share/qemu/edk2-i386-vars.fd ${VMDIR}/${VMNAME}-vars.fd
+          fi
+          BIOS="-drive if=pflash,format=raw,readonly,file=/snap/qemu-virgil/current/usr/share/qemu/edk2-x86_64-code.fd -drive if=pflash,format=raw,file=${VMDIR}/${VMNAME}-vars.fd"
+      else
+          echo " - EFI:      Booting requested but no EFI firmware found."
+          echo "             Booting from Legacy BIOS."
+      fi
+      echo " - BIOS:     EFI"
+    else
+      echo " - BIOS:     Legacy"
+    fi
   else
     echo " - BIOS:     Legacy"
   fi
 
-  if [ ! -f "${disk_img}" ]; then
-    # If there is no disk image, create a new image.
-    touch "${disk_img}"
-    ${QEMU_IMG} create -q -f qcow2 "${disk_img}" "${disk}"
-    echo "             - Just created a new image, booting from ${iso}."
-    if [ $? -ne 0 ]; then
-      echo " - ERROR! Failed to create ${disk_img} of ${disk}. Stopping here."
-      exit 1
-    fi
-    echo " - ISO Boot:      ${iso}"
+  local hdd=""
+  # Has the no hdd option been requested?
+  if [ "${no_hdd}" -eq 1 ]; then
+    echo " - No HDD option has been enabled, no hdd will be created."
   else
-  	# Check if there isn't already a process attached to the disk image.
-  	QEMU_LOCK_TEST=$(${QEMU_IMG} info ${disk_img} 2>/dev/null)
-  	if [ $? -ne 0 ]; then
-    	echo "             - Failed to get \"write\" lock. Is another process using the disk?"
-    	exit 1
-  	fi
+    if [ ! -f "${disk_img}" ]; then
+      # If there is no disk image, create a new image.
+      touch "${disk_img}"
+      ${QEMU_IMG} create -q -f qcow2 "${disk_img}" "${disk}"
+      if [ $? -ne 0 ]; then
+        echo " - ERROR! Failed to create ${disk_img} of ${disk}. Stopping here."
+        exit 1
+      fi
+      echo " - Just created a new image, booting from ${iso}."
 
-  	local disk_curr_size=$(stat -c%s "${disk_img}")
-  	if [ ! ${disk_curr_size} -le ${DISK_MIN_SIZE} ]; then
-  		# If there is a disk image AND there is an install on it, do not boot from the iso
-     	iso=""
-  	fi
+      if [ -z "${disk}" ]; then
+        echo " - Disk size not found, setting default value."
+        disk="64G"
+      fi
+
+      hdd="-drive id=disk,file=${disk_img},format=qcow2,if=virtio,aio=native,cache.direct=on"
+      echo " - ISO Boot:      ${iso}"
+    else
+      # Check if there isn't already a process attached to the disk image.
+      QEMU_LOCK_TEST=$(${QEMU_IMG} info ${disk_img} 2>/dev/null)
+      if [ $? -ne 0 ]; then
+        echo " - Failed to get \"write\" lock. Is another process using the disk?"
+        exit 1
+      fi
+
+      local disk_curr_size=$(stat -c%s "${disk_img}")
+      if [ ! ${disk_curr_size} -le ${DISK_MIN_SIZE} ]; then
+        # If there is a disk image AND there is an install on it, do not boot from the iso
+        iso=""
+      fi
+    fi
   fi
+
   if [ -e ${disk_img_snapshot} ]; then
     echo " - Snapshot: ${disk_img_snapshot}"
   fi
   echo " - Disk:     ${disk_img} (${disk})"
 
-  # Has the status quo been requested?
+  # Has the status quo option been requested?
   if [ "${status_quo}" -eq 1 ] && [ -z "${iso}" ]; then
-  	STATUSQUO="-snapshot"
-    echo "              - Existing disk state will be preserved, no changes to the disk/snapshot will be committed."
+    STATUSQUO="-snapshot"
+    echo " - Existing disk state will be preserved, no changes to the disk/snapshot will be committed."
   fi
 
   # Check if there is a boot ISO (containing the installer)
@@ -206,14 +214,14 @@ function vm_boot() {
   fi
 
   if [ ! -z "${total_cores}" ]; then
-  	echo " - CPU cores choosed by user."
+    echo " - CPU cores choosed by user."
     cores="${total_cores}"
   fi
   echo " - CPU Cores: ${cores} Core(s)"
 
   local acpu="host"
   if [ ! -z "${emulated_cpu}" ]; then
-  	echo " - Emulated CPU choosed by user."
+    echo " - Emulated CPU choosed by user."
     acpu="${emulated_cpu}"
   fi
   echo " - Emulated CPU: ${acpu}"
@@ -227,7 +235,7 @@ function vm_boot() {
   fi
 
   if [ ! -z "${ram_gb}" ]; then
-  	echo " - RAM choosed by user."
+    echo " - RAM choosed by user."
     ram="${ram_gb}"
   fi
   echo " - RAM:      ${ram}"
@@ -252,11 +260,11 @@ function vm_boot() {
   fi
 
   if [ ! -z "${guest_xres}" ]; then
-  	echo " - Guest's width resolution choosed by user."
+    echo " - Guest's width resolution choosed by user."
     xres=${guest_xres}
   fi
   if [ ! -z "${guest_yres}" ]; then
-  	echo " - Guest's height resolution choosed by user."
+    echo " - Guest's height resolution choosed by user."
     yres=${guest_yres}
   fi
   echo " - Display:  ${xres}x${yres}"
@@ -305,7 +313,7 @@ function vm_boot() {
   echo " - Launching \"${VM}\" with requested settings."
   ${QEMU} -name ${VMNAME},process=${VMNAME} \
     ${BIOS} \
-    -drive id=disk,file=${disk_img},format=qcow2,if=virtio,aio=native,cache.direct=on \
+    ${hdd} \
     ${iso} ${driver_iso} \
     -enable-kvm \
     -machine q35,accel=kvm \
@@ -395,7 +403,7 @@ fi
 
 if [ -n "${VM}" ] || [ -e "${VM}" ]; then
   source "${VM}"
-  if [ -z "${disk_img}" ]; then
+  if [ -z "${disk_img}" ] && [ -f "${no_hdd}" ]; then
     echo " - ERROR! No disk_img defined."
     exit 1
   fi 
@@ -412,25 +420,25 @@ fi
 if [ ${SNAPSHOT} -eq 1 ]; then
   if [ -n "${SNAPSHOT_ACTION}" ]; then
     case ${SNAPSHOT_ACTION} in
-    	apply)
-      		snapshot_apply "${SNAPSHOT_TAG}"
-      		snapshot_info
-      		exit;;
-    	create)
-      		snapshot_create "${SNAPSHOT_TAG}"
-      		snapshot_info
-      		exit;;
-    	delete)
-      		snapshot_delete "${SNAPSHOT_TAG}"
-      		snapshot_info
-      		exit;;
-    	info)
-      		snapshot_info
-      		exit;;
-    	*)
+      apply)
+          snapshot_apply "${SNAPSHOT_TAG}"
+          snapshot_info
+          exit;;
+      create)
+          snapshot_create "${SNAPSHOT_TAG}"
+          snapshot_info
+          exit;;
+      delete)
+          snapshot_delete "${SNAPSHOT_TAG}"
+          snapshot_info
+          exit;;
+      info)
+          snapshot_info
+          exit;;
+      *)
     echo " - ERROR! \"${SNAPSHOT_ACTION}\" is not a supported snapshot action."
     usage;;
-  	esac
+    esac
   fi
 fi
 
