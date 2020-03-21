@@ -68,10 +68,10 @@ disk=60G
 ```
 (These are only a few options of MyFastEmulator. To see the full list of options, see the `example.conf` file.)
 
-  * Use `quickemu` to start the virtual machine:
+  * Use `myfastemu` to start the virtual machine:
 
 ```
-./quickemu --vm your_configuration_file.conf
+./myfastemu --vm your_configuration_file.conf
 ```
 
 Which will output something like this:
@@ -95,7 +95,7 @@ Here are the full usage instructions:
 
 ```
 Usage
-  quickemu --vm your_configuration_file.conf
+  myfastemu --vm your_configuration_file.conf
 
 You can also pass optional parameters
   --delete                : Delete the disk image.
