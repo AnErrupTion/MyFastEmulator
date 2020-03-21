@@ -160,7 +160,7 @@ function vm_boot() {
       echo " - ERROR! Failed to create ${disk_img} of ${disk}. Stopping here."
       exit 1
     fi
-    echo " - ISO:      ${iso}"
+    echo " - ISO Boot:      ${iso}"
   else
   	# Check if there isn't already a process attached to the disk image.
   	QEMU_LOCK_TEST=$(${QEMU_IMG} info ${disk_img} 2>/dev/null)
@@ -188,14 +188,13 @@ function vm_boot() {
 
   # Check if there is a boot ISO (containing the installer)
   if [ -n "${iso}" ] && [ -e "${iso}" ]; then
-    local ISO_BOOT="-drive media=cdrom,file="${iso}",index=2"
-    echo " - ISO Boot:     ${iso}"
+    iso="-drive media=cdrom,file="${iso}",index=2"
   fi
 
   # Check if there is a driver ISO (for Windows installers)
   if [ -n "${driver_iso}" ] && [ -e "${driver_iso}" ]; then
-    local ISO_DRIVER="-drive media=cdrom,file="${driver_iso}",index=3"
     echo " - Windows VirtIO Drivers:  ${driver_iso}"
+    driver_iso="-drive media=cdrom,file="${driver_iso}",index=3"
   fi
 
   local cores="1"
@@ -307,7 +306,7 @@ function vm_boot() {
   ${QEMU} -name ${VMNAME},process=${VMNAME} \
     ${BIOS} \
     -drive id=disk,file=${disk_img},format=qcow2,if=virtio,aio=native,cache.direct=on \
-    ${ISO_BOOT} ${ISO_DRIVER} \
+    ${iso} ${driver_iso} \
     -enable-kvm \
     -machine q35,accel=kvm \
     -cpu ${acpu},kvm=on \
