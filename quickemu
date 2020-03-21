@@ -91,7 +91,7 @@ function vm_boot() {
   local VMDIR=$(dirname ${disk_img})
   local BIOS=""
   local GL="on"
-  local VIRGL="on"
+  local VIRGL="off"
   local UI="sdl"
   local QEMU_VER=$(${QEMU} -version | head -n1 | cut -d' ' -f4 | cut -d'(' -f1)
   echo " - Initializing \"${VM}\"'s settings."
@@ -299,7 +299,7 @@ function vm_boot() {
     -cpu ${acpu},kvm=on \
     -smp cores=${cores} \
     -m ${ram} \
-    -device virtio-balloon
+    -device virtio-balloon \
     -netdev ${NET},id=nic \
     -device virtio-net,netdev=nic \
     -rtc base=localtime,clock=host \
