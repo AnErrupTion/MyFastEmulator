@@ -110,7 +110,9 @@ function vm_boot() {
     echo " - GL:       ${GL}"
   fi
 
+  local output_extra=""
   if [ "${UI}" == "gtk" ]; then
+    output_extra=",grab-on-hover=on,zoom-to-fit=on"
     echo " - GTK UI is currently not compatible with GL. Turning GL off."
     GL="off"
   fi
@@ -129,11 +131,11 @@ function vm_boot() {
 
   if [ ! -z "${efi_bios}" ]; then
     if [ "${efi_bios}" -eq 1 ]; then
-      if [ -e /snap/qemu-virgil/current/usr/share/qemu/edk2-x86_64-code.fd ] ; then
+      if [ -e "${VIRGIL_PATH}/usr/share/qemu/edk2-x86_64-code.fd" ] ; then
           if [ ! -e ${VMDIR}/${VMNAME}-vars.fd ]; then
-            cp /snap/qemu-virgil/current/usr/share/qemu/edk2-i386-vars.fd ${VMDIR}/${VMNAME}-vars.fd
+            cp "${VIRGIL_PATH}/usr/share/qemu/edk2-i386-vars.fd" "${VMDIR}/${VMNAME}-vars.fd"
           fi
-          BIOS="-drive if=pflash,format=raw,readonly,file=/snap/qemu-virgil/current/usr/share/qemu/edk2-x86_64-code.fd -drive if=pflash,format=raw,file=${VMDIR}/${VMNAME}-vars.fd"
+          BIOS="-drive if=pflash,format=raw,readonly,file=${VIRGIL_PATH}/usr/share/qemu/edk2-x86_64-code.fd -drive if=pflash,format=raw,file=${VMDIR}/${VMNAME}-vars.fd"
           echo " - BIOS:     EFI"
       else
           echo " - EFI:      Booting requested but no EFI firmware found. Booting from Legacy BIOS."
@@ -146,6 +148,7 @@ function vm_boot() {
   fi
 
   local hdd=""
+  local hdd2=""
   # Has the no hdd option been requested?
   if [ "${no_hdd}" -eq 1 ]; then
     echo " - No HDD option has been enabled, no hdd will be created."
@@ -185,7 +188,8 @@ function vm_boot() {
         fi
       fi
     fi
-    hdd="-drive media=disk,file="${disk_img}",index=1"
+    hdd="-drive if=none,id=drive0,cache=directsync,aio=native,format=qcow2,file=${disk_img}"
+    hdd2="-device virtio-blk-pci,drive=drive0,scsi=off"
     echo " - Disk:     ${disk_img} (${disk})"
   fi
 
@@ -201,13 +205,13 @@ function vm_boot() {
 
   # Check if there is a boot ISO (containing the installer)
   if [ -n "${iso}" ] && [ -e "${iso}" ]; then
-    iso="-drive media=cdrom,file="${iso}",index=2"
+    iso="-drive media=cdrom,file="${iso}",index=0"
   fi
 
   # Check if there is a driver ISO (for Windows installers)
   if [ -n "${driver_iso}" ] && [ -e "${driver_iso}" ]; then
     echo " - Windows VirtIO Drivers:  ${driver_iso}"
-    driver_iso="-drive media=cdrom,file="${driver_iso}",index=3"
+    driver_iso="-drive media=cdrom,file="${driver_iso}",index=1"
   fi
 
   local cores="1"
@@ -225,12 +229,28 @@ function vm_boot() {
     echo " - CPU Cores: ${cores} Core(s)"
   fi
 
-  local acpu="host"
+  local ccpu="host"
   if [ ! -z "${emulated_cpu}" ]; then
-    acpu="${emulated_cpu}"
-    echo " - Emulated CPU: ${acpu} (choosed by user)"
+    ccpu="${emulated_cpu}"
+    echo " - Emulated CPU: ${ccpu} (choosed by user)"
   else
-    echo " - Emulated CPU: ${acpu}"
+    echo " - Emulated CPU: ${ccpu}"
+  fi
+
+  local acpu="-cpu ${ccpu},kvm=on"
+  local guest_tweaks=""
+  local vga_adapter=""
+  if [ ${windows_optimization} -eq 1 ]; then
+    echo " - Windows optimization option enabled. Lemme optimize it real quick!"
+    acpu="-cpu ${ccpu},kvm=on,hv_time"
+    guest_tweaks="-no-hpet"
+    vga_adapter="qxl-vga"
+  else
+    vga_adapter="virtio-vga"
+  fi
+
+  if [ ${force_classic_vga} -eq 1 ]; then
+    vga_adapter="VGA"
   fi
 
   local ram="2G"
@@ -277,35 +297,33 @@ function vm_boot() {
   # Determine what display to use
   local display=""
   if [ ! -z "${vga_adapter}" ]; then
-    if [ "${vga_adapter}" == "virtio" ]; then
-      display="-device virtio-vga,virgl=${VIRGL},xres=${xres},yres=${yres}"
-      echo " - Video:    VirtIO VGA (choosed by user)"
+    if [ "${vga_adapter}" == "virtio-vga" ]; then
+      display="-device ${vga_adapter},virgl=${VIRGL},xres=${xres},yres=${yres}"
+      echo " - Video:    ${vga_adapter}"
+    elif [ "${vga_adapter}" == "qxl-vga" ]; then
+      display="-device ${vga_adapter},virgl=${VIRGL},xres=${xres},yres=${yres}"
+      echo " - Video:    ${vga_adapter}"
     else
-      if [ ${support_cus_res} -eq 1 ]; then
-        echo " - Warning : ${vga_adapter} will have no support for VirGL."
-        display="-device ${vga_adapter}-vga,xres=${xres},yres=${yres}"
-      else
-        echo " - Warning : ${vga_adapter} will have no support for VirGL AND custom resolutions."
-        display="-vga ${vga_adapter}"
-      fi
-      echo " - Video:    ${vga_adapter} (choosed by user)"
+      echo " - Warning : ${vga_adapter} will have no support for VirGL."
+      display="-device ${vga_adapter},vgamem_mb=${vga_memory},xres=${xres},yres=${yres}"
+      echo " - Video:    ${vga_adapter} with ${vga_memory} MB (choosed by user)"
     fi
   else
-    display="-device virtio-vga,virgl=${VIRGL},xres=${xres},yres=${yres}"
-    echo " - Video:    VirtIO VGA"
+    display="-device ${vga_adapter},virgl=${VIRGL},xres=${xres},yres=${yres}"
+    echo " - Video:    ${vga_adapter}"
   fi
 
   # Set the hostname of the VM
   local NET="user,hostname=${VMNAME}"
   # If smbd is available, export $HOME to the guest via samba
-  if [ -e /snap/qemu-virgil/current/usr/sbin/smbd ]; then
+  if [ -e "${VIRGIL_PATH}/usr/sbin/smbd" ]; then
       NET="${NET},smb=${HOME}"
   fi
 
   if [[ ${NET} == *"smb"* ]]; then
     echo " - smbd:     ${HOME} will be exported to the guest via smb://10.0.2.4/qemu"
   else
-    echo " - smbd:     ${HOME} will not be exported to the guest. 'smbd' not found."
+    echo " - smbd:     ${HOME} will not be exported to the guest. \"smbd\" not found."
   fi
 
   # Find a free port to expose ssh to the guest
@@ -319,29 +337,24 @@ function vm_boot() {
 
   # Boot the VM
   echo " - Launching \"${VM}\" with requested settings."
-  ${QEMU} -name ${VMNAME},process=${VMNAME} \
-    ${BIOS} \
-    ${hdd} \
-    ${iso} ${driver_iso} \
-    -enable-kvm \
-    -machine q35,accel=kvm \
-    -cpu ${acpu},kvm=on \
+  ${QEMU} \
+    -name ${VMNAME},process=${VMNAME} \
+    -enable-kvm -machine q35 ${BIOS} ${guest_tweaks} \
     -accel kvm,thread=multi \
-    -smp cores=${cores} \
-    -m ${ram} \
-    -device virtio-balloon \
-    -netdev ${NET},id=nic \
-    -device virtio-net,netdev=nic \
-    -rtc base=localtime,clock=host \
-    -serial mon:stdio \
+    ${acpu} -smp cores=${cores} \
+    -m ${ram} -device virtio-balloon \
+    ${hdd} \
+    ${hdd2} ${STATUSQUO} \
+    ${iso} ${driver_iso} \
+    ${display} -display ${UI},gl=${GL}${output_extra} \
+    -device qemu-xhci,id=xhci,p2=8,p3=8 -device usb-kbd,bus=xhci.0 -device usb-tablet,bus=xhci.0 \
+    -device virtio-net,netdev=nic -netdev ${NET},id=nic \
     -audiodev pa,id=pa,server=unix:${XDG_RUNTIME_DIR}/pulse/native,out.stream-name=${LAUNCHER}-${VMNAME},in.stream-name=${LAUNCHER}-${VMNAME} \
-    -device intel-hda -device hda-duplex,audiodev=pa \
-    -device qemu-xhci,id=xhci,p2=8,p3=8 -device usb-kbd -device usb-tablet \
+    -device intel-hda -device hda-duplex,audiodev=pa,mixer=off \
+    -rtc base=localtime,clock=host \
     -object rng-random,id=rng0,filename=/dev/urandom \
     -device virtio-rng-pci,rng=rng0 \
-    ${display} \
-    -display ${UI},gl=${GL} \
-    ${STATUSQUO} \
+    -serial mon:stdio \
     "$@"
 }
 
@@ -362,6 +375,7 @@ readonly QEMU="/snap/bin/qemu-virgil"
 readonly QEMU_IMG="/snap/bin/qemu-virgil.qemu-img"
 readonly LAUNCHER=$(basename $0)
 readonly DISK_MIN_SIZE=$((197632 * 8))
+readonly VIRGIL_PATH="/snap/qemu-virgil/current"
 SNAPSHOT_ACTION=""
 SNAPSHOT_TAG=""
 SNAPSHOT=0
