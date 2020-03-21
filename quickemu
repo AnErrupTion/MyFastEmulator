@@ -145,11 +145,6 @@ function vm_boot() {
     echo " - BIOS:     Legacy"
   fi
 
-  if [ -z "${iso}" ]; then
-    echo " - ERROR! You haven't specified an ISO image to boot from."
-    exit 1
-  fi
-
   local hdd=""
   # Has the no hdd option been requested?
   if [ "${no_hdd}" -eq 1 ]; then
@@ -172,6 +167,7 @@ function vm_boot() {
 
       hdd="-drive id=disk,file=${disk_img},format=qcow2,if=virtio,aio=native,cache.direct=on"
       echo " - ISO Boot:      ${iso}"
+      echo " - Disk:     ${disk_img} (${disk})"
     else
       # Check if there isn't already a process attached to the disk image.
       QEMU_LOCK_TEST=$(${QEMU_IMG} info ${disk_img} 2>/dev/null)
@@ -184,6 +180,11 @@ function vm_boot() {
       if [ ! ${disk_curr_size} -le ${DISK_MIN_SIZE} ]; then
         # If there is a disk image AND there is an install on it, do not boot from the iso
         iso=""
+      else
+        if [ -z "${iso}" ]; then
+          echo " - ERROR! You haven't specified an ISO image to boot from."
+          exit 1
+        fi
       fi
     fi
   fi
@@ -191,7 +192,6 @@ function vm_boot() {
   if [ -e ${disk_img_snapshot} ]; then
     echo " - Snapshot: ${disk_img_snapshot}"
   fi
-  echo " - Disk:     ${disk_img} (${disk})"
 
   # Has the status quo option been requested?
   if [ "${status_quo}" -eq 1 ]; then
