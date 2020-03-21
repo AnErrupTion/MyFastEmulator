@@ -87,6 +87,13 @@ function get_port() {
 }
 
 function vm_boot() {
+  echo " --------------------------- -------------- ---------------------------"
+  echo " --------------------------- MyFastEmulator ---------------------------"
+  echo " --------------------------- MyFastEmulator ---------------------------"
+  echo " --------------------------- MyFastEmulator ---------------------------"
+  echo " --------------------------- -------------- ---------------------------"
+  echo " - Loading..."
+
   local VMNAME=$(basename ${VM} .conf)
   local VMDIR=$(dirname ${disk_img})
   local BIOS=""
@@ -180,6 +187,8 @@ function vm_boot() {
       if [ ! ${disk_curr_size} -le ${DISK_MIN_SIZE} ]; then
         # If there is a disk image AND there is an install on it, do not boot from the iso
         iso=""
+        hdd="-drive id=disk,file=${disk_img},format=qcow2,if=virtio,aio=native,cache.direct=on"
+        echo " - Disk:     ${disk_img} (${disk})"
       else
         if [ -z "${iso}" ]; then
           echo " - ERROR! You haven't specified an ISO image to boot from."
