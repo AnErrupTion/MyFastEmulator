@@ -10,7 +10,7 @@
 
 ## Introduction
 
-MyFastEmulator is a fork of the <a href="https://github.com/wimpysworld/quickemu">Quickemu</a> which aims to be a more complete and user-friendly version than Quickemu. But overall, it's a very simple script to "manage" QEMU virtual machines. Each
+MyFastEmulator is a fork of the <a href="https://github.com/wimpysworld/quickemu">Quickemu</a> project which aims to be a more complete and user-friendly version than Quickemu. But overall, it's a very simple script to "manage" QEMU virtual machines. Each
 virtual machine configuration is requiring minimal but very useful configuration, such as total CPU cores, emulated cpu, RAM, and even more. The
 main objective of the project is to enable quick testing of desktop Linux
 distributions AND Windows operating systems where the virtual machines can be stored anywhere, such as
@@ -85,7 +85,6 @@ Usage
   myfastemu --vm your_configuration_file.conf
 
 You can also pass optional parameters
-  --delete                : Delete the disk image.
   --snapshot apply <tag>  : Apply/restore a snapshot.
   --snapshot create <tag> : Create a snapshot.
   --snapshot delete <tag> : Delete a snapshot.
