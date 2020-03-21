@@ -150,7 +150,7 @@ function vm_boot() {
   local hdd=""
   local hdd2=""
   # Has the no hdd option been requested?
-  if [ "${no_hdd}" -eq 1 ]; then
+  if [ ! -z "${no_hdd}" ] && [ "${no_hdd}" -eq 1 ]; then
     echo " - No HDD option has been enabled, no hdd will be created."
   else
     if [ ! -f "${disk_img}" ]; then
@@ -198,7 +198,7 @@ function vm_boot() {
   fi
 
   # Has the status quo option been requested?
-  if [ "${status_quo}" -eq 1 ]; then
+  if [ ! -z ${status_quo} ] && [ ${status_quo} -eq 1 ]; then
     STATUSQUO="-snapshot"
     echo " - Status QUO option has been enabled, no changes to the disk/snapshot will be made."
   fi
@@ -240,7 +240,7 @@ function vm_boot() {
   local acpu="-cpu ${ccpu},kvm=on"
   local guest_tweaks=""
   local vga_adapter=""
-  if [ ${windows_optimization} -eq 1 ]; then
+  if [ ! -z ${windows_optimization} ] && [ ${windows_optimization} -eq 1 ]; then
     echo " - Windows optimization option enabled. Lemme optimize it real quick!"
     acpu="-cpu ${ccpu},kvm=on,hv_time"
     guest_tweaks="-no-hpet -no-fd-bootchk"
@@ -249,7 +249,7 @@ function vm_boot() {
     vga_adapter="virtio-vga"
   fi
 
-  if [ ${force_classic_vga} -eq 1 ]; then
+  if [ ! -z ${force_classic_vga} ] && [ ${force_classic_vga} -eq 1 ]; then
     vga_adapter="VGA"
   fi
 
@@ -355,7 +355,7 @@ function usage() {
   echo "Usage"
   echo "  ${LAUNCHER} --vm CONFIG_FILE.conf"
   echo
-  echo "You can also pass optional parameters"
+  echo "You can also pass optional parameters :"
   echo "  --snapshot apply <tag>  : Apply/restore a snapshot."
   echo "  --snapshot create <tag> : Create a snapshot."
   echo "  --snapshot delete <tag> : Delete a snapshot."
