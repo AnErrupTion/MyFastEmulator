@@ -92,7 +92,7 @@ function vm_boot() {
   local BIOS=""
   local GL="on"
   local VIRGL="on"
-  local UI="gtk"
+  local UI="sdl"
   local QEMU_VER=$(${QEMU} -version | head -n1 | cut -d' ' -f4 | cut -d'(' -f1)
   echo " - Initializing \"${VM}\"'s settings."
   echo " - QEMU:     ${QEMU} v${QEMU_VER}"
