@@ -277,7 +277,7 @@ function vm_boot() {
   else
     echo " - User didn't choose VGA adapter, setting default."
     display="-device virtio-vga,virgl=${VIRGL},xres=${xres},yres=${yres}"
-    echo " - Video:    VirtIO VGA"
+    echo " - Video:    VirtIO VGA (default)"
   fi
 
   # Set the hostname of the VM
@@ -311,6 +311,7 @@ function vm_boot() {
     -enable-kvm \
     -machine q35,accel=kvm \
     -cpu ${acpu},kvm=on \
+    -accel kvm,thread=multi \
     -smp cores=${cores} \
     -m ${ram} \
     -device virtio-balloon \
