@@ -82,8 +82,8 @@ function vm_boot() {
   echo " |--aaaaaa--aaa-aaaa-||||||--MyFastEmulator--||||||-aaaaaa--aaa-aaaa--|"
   echo " |--a-aa-a--a---aaa--||||||--MyFastEmulator--||||||-a-aa-a--a---aaa---|"
   echo " |--a-aa-a--aa--aaa--||||||--MyFastEmulator--||||||-a-aa-a--aa--aaa---|"
-  echo " |--a----a--a---aaaa-||||||||--------------||||||||-a----a--a---aaaa--|"
-  echo " --------------------------||  Loading...  ||--------------------------"
+  echo " |--a----a--a---aaaa-|||||||----------------|||||||-a----a--a---aaaa--|"
+  echo " -------------------------|||  Loading...  |||-------------------------"
   echo
 
   local VMNAME=$(basename ${VM} .conf)
@@ -243,7 +243,7 @@ function vm_boot() {
   if [ ${windows_optimization} -eq 1 ]; then
     echo " - Windows optimization option enabled. Lemme optimize it real quick!"
     acpu="-cpu ${ccpu},kvm=on,hv_time"
-    guest_tweaks="-no-hpet"
+    guest_tweaks="-no-hpet -no-fd-bootchk"
     vga_adapter="qxl-vga"
   else
     vga_adapter="virtio-vga"
@@ -296,21 +296,13 @@ function vm_boot() {
 
   # Determine what display to use
   local display=""
-  if [ ! -z "${vga_adapter}" ]; then
-    if [ "${vga_adapter}" == "virtio-vga" ]; then
-      display="-device ${vga_adapter},virgl=${VIRGL},xres=${xres},yres=${yres}"
-      echo " - Video:    ${vga_adapter}"
-    elif [ "${vga_adapter}" == "qxl-vga" ]; then
-      display="-device ${vga_adapter},virgl=${VIRGL},xres=${xres},yres=${yres}"
-      echo " - Video:    ${vga_adapter}"
-    else
-      echo " - Warning : ${vga_adapter} will have no support for VirGL."
-      display="-device ${vga_adapter},vgamem_mb=${vga_memory},xres=${xres},yres=${yres}"
-      echo " - Video:    ${vga_adapter} with ${vga_memory} MB (choosed by user)"
-    fi
-  else
+  if [ "${vga_adapter}" == "virtio-vga" ] || [ "${vga_adapter}" == "qxl-vga" ]; then
     display="-device ${vga_adapter},virgl=${VIRGL},xres=${xres},yres=${yres}"
     echo " - Video:    ${vga_adapter}"
+  else
+    echo " - Warning : ${vga_adapter} will have no support for VirGL."
+    display="-device ${vga_adapter},vgamem_mb=${vga_memory},xres=${xres},yres=${yres}"
+    echo " - Video:    ${vga_adapter} with ${vga_memory} MB (choosed by user)"
   fi
 
   # Set the hostname of the VM
