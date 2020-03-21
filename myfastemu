@@ -331,10 +331,10 @@ function vm_boot() {
   echo " - Launching \"${VM}\" with requested settings."
   ${QEMU} \
     -name ${VMNAME},process=${VMNAME} \
-    -enable-kvm -machine q35 ${BIOS} ${guest_tweaks} \
+    -enable-kvm -machine q35,vmport=off,kernel_irqchip=on ${BIOS} ${guest_tweaks} \
     -accel kvm,thread=multi \
     ${acpu} -smp cores=${cores} \
-    -m ${ram} -device virtio-balloon \
+    -m 1G,slots=5,maxmem=${ram} -device virtio-balloon \
     ${hdd} \
     ${hdd2} ${STATUSQUO} \
     ${iso} ${driver_iso} \
