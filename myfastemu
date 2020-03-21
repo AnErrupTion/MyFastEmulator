@@ -88,9 +88,9 @@ function get_port() {
 
 function vm_boot() {
   echo " --------------------------- -------------- ---------------------------"
-  echo " --------------------------- MyFastEmulator ---------------------------"
-  echo " --------------------------- MyFastEmulator ---------------------------"
-  echo " --------------------------- MyFastEmulator ---------------------------"
+  echo " ---aaaaaa--aaa-aaaa-------- MyFastEmulator ---aaaaaa--aaa-aaaa--------"
+  echo " ---a-aa-a--aa--aaa--------- MyFastEmulator ---a-aa-a--aa--aaa---------"
+  echo " ---a----a--a---aaaa-------- MyFastEmulator ---a----a--a---aaaa--------"
   echo " --------------------------- -------------- ---------------------------"
   echo " - Loading..."
 
@@ -283,7 +283,6 @@ function vm_boot() {
   else
     echo " - Height resolution:  ${yres}"
   fi
-  echo " - Display:  ${xres}x${yres}"
 
   # Determine what display to use
   local display=""
@@ -292,8 +291,13 @@ function vm_boot() {
       display="-device virtio-vga,virgl=${VIRGL},xres=${xres},yres=${yres}"
       echo " - Video:    VirtIO VGA (choosed by user)"
     else
-      echo " - Warning : ${vga_adapter} will have no support for VirGL and custom resolution."
-      display="-vga ${vga_adapter}"
+      if [ ${support_cus_res} -eq 1 ]; then
+        echo " - Warning : ${vga_adapter} will have no support for VirGL."
+        display="-device ${vga_adapter}-vga,xres=${xres},yres=${yres}"
+      else
+        echo " - Warning : ${vga_adapter} will have no support for VirGL AND custom resolutions."
+        display="-vga ${vga_adapter}"
+      fi
       echo " - Video:    ${vga_adapter} (choosed by user)"
     fi
   else
