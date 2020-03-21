@@ -165,9 +165,7 @@ function vm_boot() {
         disk="64G"
       fi
 
-      hdd="-drive id=disk,file=${disk_img},format=qcow2,if=virtio,aio=native,cache.direct=on"
       echo " - ISO Boot:      ${iso}"
-      echo " - Disk:     ${disk_img} (${disk})"
     else
       # Check if there isn't already a process attached to the disk image.
       QEMU_LOCK_TEST=$(${QEMU_IMG} info ${disk_img} 2>/dev/null)
@@ -180,8 +178,6 @@ function vm_boot() {
       if [ ! ${disk_curr_size} -le ${DISK_MIN_SIZE} ]; then
         # If there is a disk image AND there is an install on it, do not boot from the iso
         iso=""
-        hdd="-drive id=disk,file=${disk_img},format=qcow2,if=virtio,aio=native,cache.direct=on"
-        echo " - Disk:     ${disk_img} (${disk})"
       else
         if [ -z "${iso}" ]; then
           echo " - ERROR! You haven't specified an ISO image to boot from."
@@ -189,6 +185,8 @@ function vm_boot() {
         fi
       fi
     fi
+    hdd="-drive media=disk,file="${disk_img}",index=1"
+    echo " - Disk:     ${disk_img} (${disk})"
   fi
 
   if [ ! -z ${disk_img_snapshot} ]; then
