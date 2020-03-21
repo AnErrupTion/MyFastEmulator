@@ -82,7 +82,7 @@ Here are the full usage instructions:
 
 ```
 Usage
-  myfastemu --vm your_configuration_file.conf
+  ./myfastemu --vm your_configuration_file.conf
 
 You can also pass optional parameters
   --snapshot apply <tag>  : Apply/restore a snapshot.
