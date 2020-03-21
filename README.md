@@ -66,7 +66,7 @@ iso="focal-desktop-amd64.iso"
 disk_img="focal-desktop-amd64.qcow2
 disk=60G
 ```
-(These are only a few options of MyFastEmulator. To see the full list of options, go <a href="#">here</a>.)
+(These are only a few options of MyFastEmulator. To see the full list of options, see the `example.conf` file.)
 
   * Use `quickemu` to start the virtual machine:
 
