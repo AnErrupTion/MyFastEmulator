@@ -107,7 +107,7 @@ function vm_boot() {
     echo " - Guest GL choosed by user."
     GL="${guest_gl}"
   fi
-  echo " - GL:       ${Gl}"
+  echo " - GL:       ${GL}"
 
   if [ "${UI}" == "gtk" ]; then
     echo " - GTK is currently not compatible with GL, turning GL off."
