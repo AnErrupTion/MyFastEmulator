@@ -55,7 +55,6 @@ The Windows installer won't recognize your virtual HDD, which is (kind of) norma
  * NOTE : After the installation, install the guest tools from the mounted CD to get better performance.
  * Windows 7 : Install the QEMU Guest Agent (can be found in `guest-agent`).
  * Windows 8 and newer : Install the VirtIO Guest Tools (can be found at the very bottom).
- * For all Windows starting from Windows 7 : Install the SPICE Guest Tools (can be found on the website `spice-space.org`).
 
 ## FOR LINUX
 
