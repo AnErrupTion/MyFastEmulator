@@ -334,7 +334,7 @@ function vm_boot() {
     -enable-kvm -machine q35,vmport=off,kernel_irqchip=on ${BIOS} ${guest_tweaks} \
     -accel kvm,thread=multi \
     ${acpu} -smp cores=${cores} \
-    -m 1G,slots=5,maxmem=${ram} -device virtio-balloon \
+    -m ${ram} -device virtio-balloon \
     ${hdd} \
     ${hdd2} ${STATUSQUO} \
     ${iso} ${driver_iso} \
