@@ -1,15 +1,6 @@
 #!/usr/bin/env bash
 export LC_ALL=C
 
-function disk_delete() {
-  if [ -e "${disk_img}" ]; then
-    rm "${disk_img}"
-    echo " - SUCCESS! Deleted ${disk_img}"
-  else
-    echo " - ERROR! ${disk_img} not found. Skipping disk deletion."
-  fi
-}
-
 function snapshot_apply() {
   local snapshot_tag="${1}"
     if [ -z "${snapshot_tag}" ]; then
@@ -87,18 +78,19 @@ function get_port() {
 }
 
 function vm_boot() {
-  echo " --------------------------- -------------- ---------------------------"
-  echo " ---aaaaaa--aaa-aaaa-------- MyFastEmulator ---aaaaaa--aaa-aaaa--------"
-  echo " ---a-aa-a--aa--aaa--------- MyFastEmulator ---a-aa-a--aa--aaa---------"
-  echo " ---a----a--a---aaaa-------- MyFastEmulator ---a----a--a---aaaa--------"
-  echo " --------------------------- -------------- ---------------------------"
-  echo " - Loading..."
+  echo " ----------------------------------------------------------------------"
+  echo " |--aaaaaa--aaa-aaaa-||||||--MyFastEmulator--||||||-aaaaaa--aaa-aaaa--|"
+  echo " |--a-aa-a--a---aaa--||||||--MyFastEmulator--||||||-a-aa-a--a---aaa---|"
+  echo " |--a-aa-a--aa--aaa--||||||--MyFastEmulator--||||||-a-aa-a--aa--aaa---|"
+  echo " |--a----a--a---aaaa-||||||||--------------||||||||-a----a--a---aaaa--|"
+  echo " --------------------------||  Loading...  ||--------------------------"
+  echo
 
   local VMNAME=$(basename ${VM} .conf)
   local VMDIR=$(dirname ${disk_img})
   local BIOS=""
-  local GL="off"
-  local VIRGL="off"
+  local GL="on"
+  local VIRGL="on"
   local UI="sdl"
   local QEMU_VER=$(${QEMU} -version | head -n1 | cut -d' ' -f4 | cut -d'(' -f1)
   echo " - Initializing \"${VM}\"'s settings."
@@ -206,7 +198,7 @@ function vm_boot() {
   # Has the status quo option been requested?
   if [ "${status_quo}" -eq 1 ]; then
     STATUSQUO="-snapshot"
-    echo " - Existing disk state will be preserved, no changes to the disk/snapshot will be committed."
+    echo " - Status QUO option has been enabled, no changes to the disk/snapshot will be made."
   fi
 
   # Check if there is a boot ISO (containing the installer)
@@ -327,7 +319,7 @@ function vm_boot() {
     echo " - ssh:      All ports for exposing ssh have been exhausted."
   fi
 
-  # Boot the iso image
+  # Boot the VM
   echo " - Launching \"${VM}\" with requested settings."
   ${QEMU} -name ${VMNAME},process=${VMNAME} \
     ${BIOS} \
@@ -361,7 +353,6 @@ function usage() {
   echo "  ${LAUNCHER} --vm CONFIG_FILE.conf"
   echo
   echo "You can also pass optional parameters"
-  echo "  --delete   : Delete the disk image."
   echo "  --snapshot apply <tag>  : Apply/restore a snapshot."
   echo "  --snapshot create <tag> : Create a snapshot."
   echo "  --snapshot delete <tag> : Delete a snapshot."
@@ -369,7 +360,6 @@ function usage() {
   exit 1
 }
 
-DELETE=0
 readonly QEMU="/snap/bin/qemu-virgil"
 readonly QEMU_IMG="/snap/bin/qemu-virgil.qemu-img"
 readonly LAUNCHER=$(basename $0)
@@ -382,9 +372,6 @@ VM=""
 
 while [ $# -gt 0 ]; do
   case "${1}" in
-    -delete|--delete)
-      DELETE=1
-      shift;;
     -snapshot|--snapshot)
       SNAPSHOT_ACTION="${2}"
       if [ -z "${SNAPSHOT_ACTION}" ]; then
@@ -428,11 +415,6 @@ if [ -n "${VM}" ] && [ -e "${VM}" ]; then
 else
   echo " - ERROR! Virtual machine configuration not found."
   usage
-fi
-
-if [ ${DELETE} -eq 1 ]; then
-  disk_delete
-  exit
 fi
 
 if [ ${SNAPSHOT} -eq 1 ]; then
