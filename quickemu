@@ -90,7 +90,7 @@ function vm_boot() {
   local VMNAME=$(basename ${VM} .conf)
   local VMDIR=$(dirname ${disk_img})
   local BIOS=""
-  local GL="on"
+  local GL="off"
   local VIRGL="off"
   local UI="sdl"
   local QEMU_VER=$(${QEMU} -version | head -n1 | cut -d' ' -f4 | cut -d'(' -f1)
@@ -108,9 +108,15 @@ function vm_boot() {
     GL="${guest_gl}"
   fi
   echo " - GL:       ${GL}"
+  echo " - Warning: Some UIs are imcompatible with GL (can make the VM unrunnable), this is still a beta feature."
 
   if [ "${UI}" == "gtk" ]; then
     echo " - GTK is currently not compatible with GL, turning GL off."
+    GL="off"
+  fi
+
+  if [ "${UI}" == "spice-app" ]; then
+    echo " - spice-app is currently not compatible with GL, turning GL off."
     GL="off"
   fi
 
@@ -119,7 +125,6 @@ function vm_boot() {
     VIRGL="${guest_virgl}"
   fi
   echo " - VIRGL (Virgil3D):    ${VIRGL}"
-  echo " - Currently, VirGL is not supported."
 
   local disk_curr_size=$(stat -c%s "${disk_img}")
   if [ -z "${disk}" ]; then
@@ -228,15 +233,6 @@ function vm_boot() {
   fi
   echo " - RAM:      ${ram}"
 
-  # Determine what display to use
-  local display=""
-  if [ ! -z "${vga_adapter}" ]; then
-    echo " - VGA adapter choosed by user."
-    display="${UI},gl=${GL} -vga ${vga_adapter}"
-  else
-    display="${UI},gl=${GL} -vga virtio"
-  fi
-
   local xres=1152
   local yres=648
   if [ "${XDG_SESSION_TYPE}" == "x11" ]; then
@@ -258,13 +254,31 @@ function vm_boot() {
 
   if [ ! -z "${guest_xres}" ]; then
   	echo " - Guest's width resolution choosed by user."
-    xres="${guest_xres}"
+    xres=${guest_xres}
   fi
   if [ ! -z "${guest_yres}" ]; then
   	echo " - Guest's height resolution choosed by user."
-    yres="${guest_yres}"
+    yres=${guest_yres}
   fi
   echo " - Display:  ${xres}x${yres}"
+
+  # Determine what display to use
+  local display=""
+  if [ ! -z "${vga_adapter}" ]; then
+    if [ "${vga_adapter}" == "virtio" ]; then
+      echo " - User choosed VirtIO as VGA adapter."
+      display="-device virtio-vga,virgl=${VIRGL},xres=${xres},yres=${yres}"
+      echo " - Video:    VirtIO VGA"
+    else
+      echo " - VGA adapter choosed by user, no support for VirGL and custom resolution though."
+      display="-vga ${vga_adapter}"
+      echo " - Video:    ${vga_adapter}"
+    fi
+  else
+    echo " - User didn't choose VGA adapter, setting default."
+    display="-device virtio-vga,virgl=${VIRGL},xres=${xres},yres=${yres}"
+    echo " - Video:    VirtIO VGA"
+  fi
 
   # Set the hostname of the VM
   local NET="user,hostname=${VMNAME}"
@@ -309,7 +323,8 @@ function vm_boot() {
     -device qemu-xhci,id=xhci,p2=8,p3=8 -device usb-kbd -device usb-tablet \
     -object rng-random,id=rng0,filename=/dev/urandom \
     -device virtio-rng-pci,rng=rng0 \
-    -display ${display} \
+    ${display} \
+    -display ${UI},gl=${GL} \
     ${STATUSQUO} \
     "$@"
 }

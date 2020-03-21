@@ -55,7 +55,7 @@ The Windows installer won't recognize your virtual HDD, which is (kind of) norma
  * NOTE : After the installation, install the guest tools from the mounted CD to get better performance.
  * Windows 7 : Install the QEMU Guest Agent (can be found in `guest-agent`).
  * Windows 8 and newer : Install the VirtIO Guest Tools (can be found at the very bottom).
- * NOTE : DON'T install the SPICE Guest Tools, it will make your VM unusable.
+ * For all Windows starting from Windows 7 : Install the SPICE Guest Tools (can be found on the website `spice-space.org`).
 
 ## FOR LINUX
 
@@ -113,6 +113,8 @@ You can also pass optional parameters
   - [x] Make disk image optionally size configurable
   - [x] Improve snapshot management
   - [ ] Create desktop launcher for a VM
-  - [ ] Add support for Virgil3D
-  - [x] Get QEMU `-audiodev` working for audio input, something like:
+  - [x] Add support for Virgil3D
+  - [x] Add support for GL
+  - [x] Get QEMU `-audiodev` working for audio input
   - [x] Add Windows support
+  - [ ] Fix crazy mouse pointer on Windows
