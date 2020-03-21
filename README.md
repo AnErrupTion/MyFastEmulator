@@ -116,4 +116,3 @@ You can also pass optional parameters
   - [x] Add support for GL
   - [x] Get QEMU `-audiodev` working for audio input
   - [x] Add Windows support
-  - [ ] Fix crazy mouse pointer on Windows
