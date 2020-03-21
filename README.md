@@ -4,7 +4,7 @@
   MyFastEmulator
 </h1>
 
-<p align="center"><b>Simple shell script to "manage" Qemu virtual machines.</b></p>
+<p align="center"><b>A front-end for the fully-accelerated qemu-virgil.</b></p>
 <div align="center"><img src=".github/screenshot.png" alt="Quickemu Screenshot" /></div>
 <p align="center">Made with 💝 for <img src="https://raw.githubusercontent.com/anythingcodes/slack-emoji-for-techies/gh-pages/emoji/tux.png" align="top" width="24" /></p>
 
