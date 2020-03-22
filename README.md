@@ -77,20 +77,7 @@ disk=60G
 
 Which will output something like this:
 
-```
-Starting your_configuration_file.conf
- - QEMU:     /snap/bin/qemu-virgil v4.2.0
- - BIOS:     Legacy
- - Disk:     focal-desktop-amd64.qcow2 (64G)
- - ISO:      focal-desktop-amd64.iso
- - CPU:      4 Core(s)
- - RAM:      4G
- - UI:       gtk
- - VIRGL:    off
- - Display:  1664x936
- - smbd:     /home/USERNAME will be exported to the guest via smb://10.0.2.4/qemu
- - ssh:      22221/tcp is connected. Login via 'ssh user@localhost -p 22221'
-```
+<div align="center"><img src=".github/screenshot2.png" alt="MyFastEmulator Console Screenshot" /></div>
 
 Here are the full usage instructions:
 
