@@ -77,6 +77,53 @@ function get_port() {
     done
 }
 
+function enable_usb_passthrough() {
+   local DEVICE=""
+   local USB_BUS=""
+   local USB_DEV=""
+   local USB_NAME=""
+   local VENDOR_ID=""
+   local PRODUCT_ID=""
+   local TEMP_SCRIPT=$(mktemp)
+   local EXEC_SCRIPT=0
+
+   # Have any USB devices been requested for pass-through?
+   if (( ${#usb_devices[@]} )); then
+     echo " - USB:      Device pass-through requested:"
+     echo "#!/usr/bin/env bash" > "${TEMP_SCRIPT}"
+     for DEVICE in "${usb_devices[@]}"; do
+       VENDOR_ID=$(echo ${DEVICE} | cut -d':' -f1)
+       PRODUCT_ID=$(echo ${DEVICE} | cut -d':' -f2)
+       USB_BUS=$(lsusb -d ${VENDOR_ID}:${PRODUCT_ID} | cut -d' ' -f2)
+       USB_DEV=$(lsusb -d ${VENDOR_ID}:${PRODUCT_ID} | cut -d' ' -f4 | cut -d':' -f1)
+       USB_NAME=$(lsusb -d ${VENDOR_ID}:${PRODUCT_ID} | cut -d' ' -f7-)
+       echo " - ${USB_NAME}"
+       USB_PASSTHROUGH="${USB_PASSTHROUGH} -usb -device usb-host,vendorid=0x${VENDOR_ID},productid=0x${PRODUCT_ID}"
+
+       if [ ! -w /dev/bus/usb/${USB_BUS}/${USB_DEV} ]; then
+         local EXEC_SCRIPT=1
+         echo "chown root:${USER} /dev/bus/usb/${USB_BUS}/${USB_DEV}" >> "${TEMP_SCRIPT}"
+       fi
+     done
+
+    if [ ${EXEC_SCRIPT} -eq 1 ]; then
+      chmod +x "${TEMP_SCRIPT}"
+      echo " - Requested USB device(s) are NOT accessible."
+      echo " - ${TEMP_SCRIPT} will be executed to enable access:"
+      echo
+      cat ${TEMP_SCRIPT}
+      echo
+      sudo "${TEMP_SCRIPT}"
+      if [ $? -ne 0 ]; then
+       echo " - WARNING! Enabling USB device access failed."
+      fi
+    else
+      echo " - Requested USB device(s) are accessible."
+    fi
+    rm -f "${TEMP_SCRIPT}"
+  fi
+ }
+
 function vm_boot() {
   echo " ----------------------------------------------------------------------"
   echo " |--aaaaaa--aaa-aaaa-||||||--MyFastEmulator--||||||-aaaaaa--aaa-aaaa--|"
@@ -86,10 +133,10 @@ function vm_boot() {
   echo " -------------------------|||  Loading...  |||-------------------------"
   echo
 
-  local VMNAME=$(basename ${VM} .conf)
+  local VMNAME=$(basename "${VM}" .conf)
   local VMDIR=""
   if [ -f "${disk_img}" ]; then
-    VMDIR=$(dirname ${disk_img})
+    VMDIR=$(dirname "${disk_img}")
   fi
   local BIOS=""
   local GL="on"
@@ -98,6 +145,9 @@ function vm_boot() {
   local QEMU_VER=$(${QEMU} -version | head -n1 | cut -d' ' -f4 | cut -d'(' -f1)
   echo " - Initializing \"${VM}\"'s settings."
   echo " - QEMU:     ${QEMU} v${QEMU_VER}"
+
+  # Fix KVM "permission denied" error (https://bugzilla.redhat.com/show_bug.cgi?id=1479558)
+  sudo chmod 666 /dev/kvm
 
   if [ ! -z "${guest_ui}" ]; then
     UI="${guest_ui}"
@@ -135,10 +185,14 @@ function vm_boot() {
   if [ ! -z "${efi_bios}" ]; then
     if [ "${efi_bios}" -eq 1 ]; then
       if [ -e "${VIRGIL_PATH}/usr/share/qemu/edk2-x86_64-code.fd" ] ; then
-          if [ ! -e ${VMNAME}-vars.fd ]; then
-            cp "${VIRGIL_PATH}/usr/share/qemu/edk2-i386-vars.fd" "${VMNAME}-vars.fd"
+          local EFI_CODE="${VIRGIL_PATH}/usr/share/qemu/edk2-x86_64-code.fd"
+          local EFI_VARS="${VMDIR}/${VMNAME}-vars.fd"
+
+          if [ ! -e "${EFI_VARS}" ]; then
+            cp "${VIRGIL_PATH}/usr/share/qemu/edk2-i386-vars.fd" "${EFI_VARS}"
           fi
-          BIOS="-drive if=pflash,format=raw,readonly,file=${VIRGIL_PATH}/usr/share/qemu/edk2-x86_64-code.fd -drive if=pflash,format=raw,file=${VMNAME}-vars.fd"
+
+          BIOS="-drive if=pflash,format=raw,readonly,file=${EFI_CODE} -drive if=pflash,format=raw,file=${VMNAME}-vars.fd"
           echo " - BIOS:     EFI"
       else
           echo " - EFI:      Booting requested but no EFI firmware found. Booting from Legacy BIOS."
@@ -174,7 +228,7 @@ function vm_boot() {
       echo " - ISO Boot:      ${iso}"
     else
       # Check if there isn't already a process attached to the disk image.
-      QEMU_LOCK_TEST=$(${QEMU_IMG} info ${disk_img} 2>/dev/null)
+      QEMU_LOCK_TEST=$(${QEMU_IMG} info "${disk_img}" 2>/dev/null)
       if [ $? -ne 0 ]; then
         echo " - Failed to get \"write\" lock. Is another process using the disk?"
         exit 1
@@ -330,6 +384,8 @@ function vm_boot() {
     echo " - ssh:      All ports for exposing ssh have been exhausted."
   fi
 
+  enable_usb_passthrough
+
   # Boot the VM
   echo " - Launching \"${VM}\" with requested settings."
   ${QEMU} \
@@ -349,10 +405,13 @@ function vm_boot() {
     -rtc base=localtime,clock=host \
     -object rng-random,id=rng0,filename=/dev/urandom \
     -device virtio-rng-pci,rng=rng0 \
+    -spice port=5930,disable-ticketing \
+    -device virtio-serial-pci \
+    -device virtserialport,chardev=spicechannel0,name=com.redhat.spice.0 \
+    -chardev spicevmc,id=spicechannel0,name=vdagent \
     -serial mon:stdio \
     "$@"
   echo " - The VM has been shut down."
-  #rm "./ram_prealloc"
 }
 
 function usage() {
@@ -370,7 +429,7 @@ function usage() {
 
 readonly QEMU="/snap/bin/qemu-virgil"
 readonly QEMU_IMG="/snap/bin/qemu-virgil.qemu-img"
-readonly LAUNCHER=$(basename $0)
+readonly LAUNCHER=$(basename "${0}")
 readonly DISK_MIN_SIZE=$((197632 * 8))
 readonly VIRGIL_PATH="/snap/qemu-virgil/current"
 SNAPSHOT_ACTION=""
@@ -378,6 +437,7 @@ SNAPSHOT_TAG=""
 SNAPSHOT=0
 STATUSQUO=""
 VM=""
+usb_devices=()
 
 while [ $# -gt 0 ]; do
   case "${1}" in
@@ -397,7 +457,7 @@ while [ $# -gt 0 ]; do
       shift
       shift;;
     -vm|--vm)
-      VM="$2"
+      VM="${2}"
       shift
       shift;;
     -h|--h|-help|--help)
@@ -420,7 +480,7 @@ if [ -n "${VM}" ] && [ -e "${VM}" ]; then
   if [ -z "${disk_img}" ] && [ -f "${no_hdd}" ]; then
     echo " - ERROR! No disk_img defined."
     exit 1
-  fi 
+  fi
 else
   echo " - ERROR! Virtual machine configuration not found."
   usage

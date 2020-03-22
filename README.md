@@ -1,11 +1,11 @@
 <h1 align="center">
-  <img src=".github/logo.png" alt="Quickemu" />
+  <img src=".github/logo.png" alt="MyFastEmulator" />
   <br />
   MyFastEmulator
 </h1>
 
 <p align="center"><b>Simple shell script to "manage" Qemu virtual machines.</b></p>
-<div align="center"><img src=".github/screenshot.png" alt="Quickemu Screenshot" /></div>
+<div align="center"><img src=".github/screenshot.png" alt="MyFastEmulator Screenshot" /></div>
 <p align="center">Made with 💝 for <img src="https://raw.githubusercontent.com/anythingcodes/slack-emoji-for-techies/gh-pages/emoji/tux.png" align="top" width="24" /></p>
 
 ## Introduction
@@ -37,6 +37,7 @@ Note that this will use the bleeding edge version of qemu-virgil (required for t
 ```bash
 snap install qemu-virgil --edge
 snap connect qemu-virgil:kvm
+snap connect qemu-virgil:raw-usb
 snap connect qemu-virgil:removable-media
 ```
 
@@ -47,9 +48,9 @@ snap connect qemu-virgil:removable-media
 The Windows installer won't recognize your virtual HDD, which is (kind of) normal. To make it detect it, you'll have to install the VirtIO SCSI drivers. To do that, follow the steps below.
 
  * Download the complete [VirtIO drivers ISO file](https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/latest-virtio/virtio-win.iso), rename it to whatever you want (example : `virtio_drivers.iso`) then place it wherever you want (example : in the directory where there is MyFastEmulator).
- 
+
  * Edit your configuration file, and add this line : `driver_iso="virtio_drivers.iso"`. Save the file, and close it.
- 
+
  * Boot the VM into the Windows installer of your choice (7, 10, etc...). Now, where the partitions should appear, click `Load driver`. In the following message box, click `Browse`, then go to the mounted ISO file, then go to `amd64`, then click on the folder that matches the Windows version you're installing (for example, win7). Now, load the driver, and the partition should appear!
 
  * NOTE : After the installation, install the guest tools from the mounted CD to get better performance.
@@ -68,10 +69,10 @@ disk=60G
 ```
 (These are only a few options of MyFastEmulator. To see the full list of options, see the `example.conf` file.</a>.)
 
-  * Use `quickemu` to start the virtual machine:
+  * Use `myfastemu` to start the virtual machine:
 
 ```
-./quickemu --vm your_configuration_file.conf
+./myfastemu -vm your_configuration_file.conf
 ```
 
 Which will output something like this:
@@ -95,7 +96,7 @@ Here are the full usage instructions:
 
 ```
 Usage
-  quickemu --vm your_configuration_file.conf
+  ./myfastemu -vm your_configuration_file.conf
 
 You can also pass optional parameters
   --snapshot apply <tag>  : Apply/restore a snapshot.
@@ -108,7 +109,7 @@ You can also pass optional parameters
 
   - [x] Make display configuration more robust
   - [x] Improve stdout presentation
-  - [x] Make disk image optionally size configurable
+  - [x] Make disk image size configurable
   - [x] Improve snapshot management
   - [ ] Make an option to create a desktop launcher (shortcut) for a VM
   - [x] Add support for Virgil3D
@@ -116,3 +117,5 @@ You can also pass optional parameters
   - [x] Get QEMU `-audiodev` working for audio input
   - [x] Add Windows support
   - [x] Improve performance
+  - [x] Add USB pass-through support
+  - [ ] Improve disk management
