@@ -4,8 +4,8 @@
   MyFastEmulator
 </h1>
 
-<p align="center"><b>A front-end for the fully-accelerated qemu-virgil.</b></p>
-<div align="center"><img src=".github/screenshot.png" alt="MyFastEmulator Screenshot" /></div>
+<p align="center"><b>Simple shell script to "manage" Qemu virtual machines.</b></p>
+<div align="center"><img src=".github/screenshot.png" alt="Quickemu Screenshot" /></div>
 <p align="center">Made with 💝 for <img src="https://raw.githubusercontent.com/anythingcodes/slack-emoji-for-techies/gh-pages/emoji/tux.png" align="top" width="24" /></p>
 
 ## Introduction
@@ -66,23 +66,36 @@ iso="focal-desktop-amd64.iso"
 disk_img="focal-desktop-amd64.qcow2
 disk=60G
 ```
-(These are only a few options of MyFastEmulator. To see the full list of options, see the `example.conf` file.)
+(These are only a few options of MyFastEmulator. To see the full list of options, see the `example.conf` file.</a>.)
 
-  * Use `myfastemu` to start the virtual machine:
+  * Use `quickemu` to start the virtual machine:
 
 ```
-./myfastemu --vm your_configuration_file.conf
+./quickemu --vm your_configuration_file.conf
 ```
 
 Which will output something like this:
 
-<div align="center"><img src=".github/screenshot2.png" alt="Output Screenshot" /></div>
+```
+Starting your_configuration_file.conf
+ - QEMU:     /snap/bin/qemu-virgil v4.2.0
+ - BIOS:     Legacy
+ - Disk:     focal-desktop-amd64.qcow2 (64G)
+ - ISO:      focal-desktop-amd64.iso
+ - CPU:      4 Core(s)
+ - RAM:      4G
+ - UI:       gtk
+ - VIRGL:    off
+ - Display:  1664x936
+ - smbd:     /home/USERNAME will be exported to the guest via smb://10.0.2.4/qemu
+ - ssh:      22221/tcp is connected. Login via 'ssh user@localhost -p 22221'
+```
 
 Here are the full usage instructions:
 
 ```
 Usage
-  ./myfastemu --vm your_configuration_file.conf
+  quickemu --vm your_configuration_file.conf
 
 You can also pass optional parameters
   --snapshot apply <tag>  : Apply/restore a snapshot.
@@ -97,8 +110,9 @@ You can also pass optional parameters
   - [x] Improve stdout presentation
   - [x] Make disk image optionally size configurable
   - [x] Improve snapshot management
-  - [ ] Create desktop launcher for a VM
+  - [ ] Make an option to create a desktop launcher (shortcut) for a VM
   - [x] Add support for Virgil3D
   - [x] Add support for GL
   - [x] Get QEMU `-audiodev` working for audio input
   - [x] Add Windows support
+  - [x] Improve performance
