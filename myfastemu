@@ -337,7 +337,7 @@ function vm_boot() {
     -enable-kvm -machine q35,vmport=off,kernel_irqchip=on ${BIOS} ${guest_tweaks} \
     -accel kvm,thread=multi \
     ${acpu} -smp cores=${cores} \
-    -m ${ram} -mem-path "./ram_prealloc" -mem-prealloc -device virtio-balloon \
+    -m ${ram} -device virtio-balloon \
     ${hdd} \
     ${hdd2} ${STATUSQUO} \
     ${iso} ${driver_iso} \
@@ -352,7 +352,7 @@ function vm_boot() {
     -serial mon:stdio \
     "$@"
   echo " - The VM has been shut down."
-  rm "./ram_prealloc"
+  #rm "./ram_prealloc"
 }
 
 function usage() {
