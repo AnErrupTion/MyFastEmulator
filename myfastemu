@@ -89,7 +89,7 @@ function enable_usb_passthrough() {
 
    # Have any USB devices been requested for pass-through?
    if (( ${#usb_devices[@]} )); then
-     echo " - USB:      Device pass-through requested:"
+     echo " - USB: Device pass-through requested:"
      echo "#!/usr/bin/env bash" > "${TEMP_SCRIPT}"
      for DEVICE in "${usb_devices[@]}"; do
        VENDOR_ID=$(echo ${DEVICE} | cut -d':' -f1)
@@ -98,7 +98,7 @@ function enable_usb_passthrough() {
        USB_DEV=$(lsusb -d ${VENDOR_ID}:${PRODUCT_ID} | cut -d' ' -f4 | cut -d':' -f1)
        USB_NAME=$(lsusb -d ${VENDOR_ID}:${PRODUCT_ID} | cut -d' ' -f7-)
        echo " - ${USB_NAME}"
-       USB_PASSTHROUGH="${USB_PASSTHROUGH} -usb -device usb-host,vendorid=0x${VENDOR_ID},productid=0x${PRODUCT_ID}"
+       USB_PASSTHROUGH="${USB_PASSTHROUGH} -device usb-host,vendorid=0x${VENDOR_ID},productid=0x${PRODUCT_ID},bus=xhci.0"
 
        if [ ! -w /dev/bus/usb/${USB_BUS}/${USB_DEV} ]; then
          local EXEC_SCRIPT=1
@@ -182,11 +182,12 @@ function vm_boot() {
     echo " - VIRGL (Virgil3D):    ${VIRGL}"
   fi
 
+  local EFI_VARS=""
   if [ ! -z "${efi_bios}" ]; then
     if [ "${efi_bios}" -eq 1 ]; then
       if [ -e "${VIRGIL_PATH}/usr/share/qemu/edk2-x86_64-code.fd" ] ; then
           local EFI_CODE="${VIRGIL_PATH}/usr/share/qemu/edk2-x86_64-code.fd"
-          local EFI_VARS="${VMDIR}/${VMNAME}-vars.fd"
+          EFI_VARS="${VMDIR}/${VMNAME}-vars.fd"
 
           if [ ! -e "${EFI_VARS}" ]; then
             cp "${VIRGIL_PATH}/usr/share/qemu/edk2-i386-vars.fd" "${EFI_VARS}"
@@ -397,7 +398,7 @@ function vm_boot() {
     ${hdd2} ${STATUSQUO} \
     ${iso} ${driver_iso} \
     ${display} -display ${UI},gl=${GL}${output_extra} \
-    -device qemu-xhci,id=xhci,p2=8,p3=8 -device usb-kbd,bus=xhci.0 -device usb-tablet,bus=xhci.0 \
+    -usb -device qemu-xhci,id=xhci,p2=8,p3=8 -device usb-kbd,bus=xhci.0 -device usb-tablet,bus=xhci.0 ${USB_PASSTHROUGH} \
     -device virtio-net,netdev=nic -netdev ${NET},id=nic \
     -audiodev pa,id=pa,server=unix:${XDG_RUNTIME_DIR}/pulse/native,out.stream-name=${LAUNCHER}-${VMNAME},in.stream-name=${LAUNCHER}-${VMNAME} \
     -device intel-hda -device hda-duplex,audiodev=pa,mixer=off \
@@ -438,6 +439,7 @@ SNAPSHOT_ACTION=""
 SNAPSHOT_TAG=""
 SNAPSHOT=0
 STATUSQUO=""
+USB_PASSTHROUGH=""
 VM=""
 usb_devices=()
 
