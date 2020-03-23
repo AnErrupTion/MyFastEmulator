@@ -54,8 +54,8 @@ The Windows installer won't recognize your virtual HDD, which is (kind of) norma
  * Boot the VM into the Windows installer of your choice (7, 10, etc...). Now, where the partitions should appear, click `Load driver`. In the following message box, click `Browse`, then go to the mounted ISO file, then go to `amd64`, then click on the folder that matches the Windows version you're installing (for example, win7). Now, load the driver, and the partition should appear!
 
  * NOTE : After the installation, install the guest tools from the mounted CD to get better performance.
- * Windows 7 : Install the QEMU Guest Agent (can be found in `guest-agent`).
  * Windows 8 and newer : Install the VirtIO Guest Tools (can be found at the very bottom).
+ * Currently, no guest tools have been found for Windows 7 and older. Sorry!
 
 ## FOR LINUX
 
@@ -106,4 +106,3 @@ You can also pass optional parameters
   - [x] Improve performance
   - [x] Add USB pass-through support
   - [ ] Improve disk management
-  - [ ] Fix non-working EFI
