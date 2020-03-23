@@ -262,7 +262,7 @@ function vm_boot() {
   # Check if there is a boot ISO, use IDE for better compatibility
   if [ -n "${iso}" ] && [ -e "${iso}" ]; then
     echo " - ISO Boot: ${iso}"
-    iso="-device ide-cd,drive=drive-cd-disk1,id=cd-disk1,unit=0,bus=ide.0 -drive file=${iso},id=drive-cd-disk1,if=none,media=cdrom"
+    iso="-drive media=cdrom,file="${iso}",index=0"
   fi
 
   # Check if there is a driver ISO, no need to use IDE here
