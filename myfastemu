@@ -224,8 +224,6 @@ function vm_boot() {
         echo " - Disk size not found, setting default value."
         disk="64G"
       fi
-
-      echo " - ISO Boot:      ${iso}"
     else
       # Check if there isn't already a process attached to the disk image.
       QEMU_LOCK_TEST=$(${QEMU_IMG} info "${disk_img}" 2>/dev/null)
@@ -254,18 +252,19 @@ function vm_boot() {
     echo " - Snapshot: ${disk_img_snapshot}"
   fi
 
-  # Has the status quo option been requested?
+  # Has the status QUO option been requested?
   if [ ! -z ${status_quo} ] && [ ${status_quo} -eq 1 ]; then
     STATUSQUO="-snapshot"
     echo " - Status QUO option has been enabled, no changes to the disk/snapshot will be made."
   fi
 
-  # Check if there is a boot ISO (containing the installer)
+  # Check if there is a boot ISO
   if [ -n "${iso}" ] && [ -e "${iso}" ]; then
+    echo " - ISO Boot:      ${iso}"
     iso="-drive media=cdrom,file="${iso}",index=0"
   fi
 
-  # Check if there is a driver ISO (for Windows installers)
+  # Check if there is a driver ISO
   if [ -n "${driver_iso}" ] && [ -e "${driver_iso}" ]; then
     echo " - Windows VirtIO Drivers:  ${driver_iso}"
     driver_iso="-drive media=cdrom,file="${driver_iso}",index=1"
@@ -392,6 +391,7 @@ function vm_boot() {
     -name ${VMNAME},process=${VMNAME} \
     -enable-kvm -machine q35,vmport=off,kernel_irqchip=on ${BIOS} ${guest_tweaks} \
     -accel kvm,thread=multi \
+    -boot order=d,menu=on,strict=on \
     ${acpu} -smp cores=${cores} \
     -m ${ram} -device virtio-balloon \
     ${hdd} \
@@ -412,6 +412,9 @@ function vm_boot() {
     -serial mon:stdio \
     "$@"
   echo " - The VM has been shut down."
+  if [ -e "${EFI_VARS}" ]; then
+    rm "${EFI_VARS}"
+  fi
 }
 
 function usage() {
