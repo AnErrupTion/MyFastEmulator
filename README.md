@@ -106,3 +106,4 @@ You can also pass optional parameters
   - [x] Improve performance
   - [x] Add USB pass-through support
   - [ ] Improve disk management
+  - [ ] Fix non-working EFI
