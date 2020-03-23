@@ -259,13 +259,13 @@ function vm_boot() {
     echo " - Status QUO option has been enabled, no changes to the disk/snapshot will be made."
   fi
 
-  # Check if there is a boot ISO, use IDE for better compatibility
+  # Check if there is a boot ISO
   if [ -n "${iso}" ] && [ -e "${iso}" ]; then
     echo " - ISO Boot: ${iso}"
     iso="-drive media=cdrom,file="${iso}",index=0"
   fi
 
-  # Check if there is a driver ISO, no need to use IDE here
+  # Check if there is a driver ISO
   if [ -n "${driver_iso}" ] && [ -e "${driver_iso}" ]; then
     echo " - Windows VirtIO Drivers:  ${driver_iso}"
     driver_iso="-drive media=cdrom,file="${driver_iso}",index=1"
