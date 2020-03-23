@@ -187,7 +187,7 @@ function vm_boot() {
     if [ "${efi_bios}" -eq 1 ]; then
       if [ -e "${VIRGIL_PATH}/usr/share/qemu/edk2-x86_64-code.fd" ] ; then
           local EFI_CODE="${VIRGIL_PATH}/usr/share/qemu/edk2-x86_64-code.fd"
-          EFI_VARS="${VMDIR}/${VMNAME}-vars.fd"
+          EFI_VARS="${VMNAME}-vars.fd"
 
           if [ ! -e "${EFI_VARS}" ]; then
             cp "${VIRGIL_PATH}/usr/share/qemu/edk2-i386-vars.fd" "${EFI_VARS}"
@@ -353,8 +353,12 @@ function vm_boot() {
 
   # Determine what display to use
   local display=""
-  if [ "${vga_adapter}" == "virtio-vga" ] || [ "${vga_adapter}" == "qxl-vga" ]; then
-    display="-device ${vga_adapter},virgl=${VIRGL},xres=${xres},yres=${yres}"
+  if [ "${vga_adapter}" == "virtio-vga" ]; then
+    if [ "${vga_adapter}" == "qxl-vga" ]; then
+      display="-device ${vga_adapter},xres=${xres},yres=${yres}"
+    else
+      display="-device ${vga_adapter},virgl=${VIRGL},xres=${xres},yres=${yres}"
+    fi
     echo " - Video:    ${vga_adapter}"
   else
     echo " - Warning : ${vga_adapter} will have no support for VirGL."
