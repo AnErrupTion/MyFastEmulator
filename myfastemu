@@ -258,13 +258,13 @@ function vm_boot() {
     echo " - Status QUO option has been enabled, no changes to the disk/snapshot will be made."
   fi
 
-  # Check if there is a boot ISO
+  # Check if there is a boot ISO, use IDE for better compatibility
   if [ -n "${iso}" ] && [ -e "${iso}" ]; then
-    echo " - ISO Boot:      ${iso}"
-    iso="-drive media=cdrom,file="${iso}",index=0"
+    echo " - ISO Boot: ${iso}"
+    iso="-device ide-cd,drive=drive-cd-disk1,id=cd-disk1,unit=0,bus=ide.0 -drive file=${iso},id=drive-cd-disk1,if=none,media=cdrom"
   fi
 
-  # Check if there is a driver ISO
+  # Check if there is a driver ISO, no need to use IDE here
   if [ -n "${driver_iso}" ] && [ -e "${driver_iso}" ]; then
     echo " - Windows VirtIO Drivers:  ${driver_iso}"
     driver_iso="-drive media=cdrom,file="${driver_iso}",index=1"
@@ -391,7 +391,6 @@ function vm_boot() {
     -name ${VMNAME},process=${VMNAME} \
     -enable-kvm -machine q35,vmport=off,kernel_irqchip=on ${BIOS} ${guest_tweaks} \
     -accel kvm,thread=multi \
-    -boot order=d,menu=on,strict=on \
     ${acpu} -smp cores=${cores} \
     -m ${ram} -device virtio-balloon \
     ${hdd} \
