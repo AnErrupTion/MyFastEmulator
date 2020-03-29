@@ -414,7 +414,7 @@ function vm_boot() {
     -device virtio-serial-pci \
     -device virtserialport,chardev=spicechannel0,name=com.redhat.spice.0 \
     -chardev spicevmc,id=spicechannel0,name=vdagent \
-    -serial mon:stdio \
+    -serial pty -parallel none \
     "$@"
   echo " - The VM has been shut down."
   if [ -e "${EFI_VARS}" ]; then
