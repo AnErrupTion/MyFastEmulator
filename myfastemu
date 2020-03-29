@@ -3,59 +3,59 @@ export LC_ALL=C
 
 function snapshot_apply() {
   local snapshot_tag="${1}"
-    if [ -z "${snapshot_tag}" ]; then
-      echo " - ERROR! No snapshot tag provided."
-      exit
-    fi
+  if [ -z "${snapshot_tag}" ]; then
+    echo " - ERROR! No snapshot tag provided."
+    exit
+  fi
 
-    if [ -e "${disk_img}" ]; then
-      ${QEMU_IMG} snapshot -q -a "${snapshot_tag}" "${disk_img}"
-      if [ $? -eq 0 ]; then
-          echo " - SUCCESS! Applied snapshot ${snapshot_tag} to ${disk_img}."
-      else
-          echo " - ERROR! Failed to apply snapshot ${snapshot_id} to ${disk_img}."
-      fi
+  if [ -e "${disk_img}" ]; then
+    ${QEMU_IMG} snapshot -q -a "${snapshot_tag}" "${disk_img}"
+    if [ $? -eq 0 ]; then
+      echo " - SUCCESS! Applied snapshot ${snapshot_tag} to ${disk_img}."
     else
-      echo " - ERROR! ${disk_img} not found. Doing nothing."
+      echo " - ERROR! Failed to apply snapshot ${snapshot_id} to ${disk_img}."
     fi
+  else
+    echo " - ERROR! ${disk_img} not found. Doing nothing."
+  fi
 }
 
 function snapshot_create() {
   local snapshot_tag="${1}"
-    if [ -z "${snapshot_tag}" ]; then
-      echo " - ERROR! No snapshot tag provided."
-      exit
-    fi
+  if [ -z "${snapshot_tag}" ]; then
+    echo " - ERROR! No snapshot tag provided."
+    exit
+  fi
 
-    if [ -e "${disk_img}" ]; then
-      ${QEMU_IMG} snapshot -q -c "${snapshot_tag}" "${disk_img}"
-      if [ $? -eq 0 ]; then
-          echo " - SUCCESS! Created snapshot ${snapshot_tag} of ${disk_img}."
-      else
-          echo " - ERROR! Failed to create snapshot ${snapshot_id} of ${disk_img}."
-      fi
+  if [ -e "${disk_img}" ]; then
+    ${QEMU_IMG} snapshot -q -c "${snapshot_tag}" "${disk_img}"
+    if [ $? -eq 0 ]; then
+      echo " - SUCCESS! Created snapshot ${snapshot_tag} of ${disk_img}."
     else
-      echo " - ERROR! ${disk_img} not found. Doing nothing."
+      echo " - ERROR! Failed to create snapshot ${snapshot_id} of ${disk_img}."
     fi
+  else
+    echo " - ERROR! ${disk_img} not found. Doing nothing."
+  fi
 }
 
 function snapshot_delete() {
   local snapshot_tag="${1}"
-    if [ -z "${snapshot_tag}" ]; then
-      echo " - ERROR! No snapshot tag provided."
-      exit
-    fi
+  if [ -z "${snapshot_tag}" ]; then
+    echo " - ERROR! No snapshot tag provided."
+    exit
+  fi
 
-    if [ -e "${disk_img}" ]; then
-      ${QEMU_IMG} snapshot -q -d "${snapshot_tag}" "${disk_img}"
-      if [ $? -eq 0 ]; then
-          echo " - SUCCESS! Deleted snapshot ${snapshot_tag} of ${disk_img}."
-      else
-          echo " - ERROR! Failed to delete snapshot ${snapshot_id} of ${disk_img}."
-      fi
+  if [ -e "${disk_img}" ]; then
+    ${QEMU_IMG} snapshot -q -d "${snapshot_tag}" "${disk_img}"
+    if [ $? -eq 0 ]; then
+      echo " - SUCCESS! Deleted snapshot ${snapshot_tag} of ${disk_img}."
     else
-      echo " - ERROR! ${disk_img} not found. Doing nothing."
+      echo " - ERROR! Failed to delete snapshot ${snapshot_id} of ${disk_img}."
     fi
+  else
+    echo " - ERROR! ${disk_img} not found. Doing nothing."
+  fi
 }
 
 function snapshot_info() {
@@ -98,7 +98,7 @@ function enable_usb_passthrough() {
       USB_DEV=$(lsusb -d ${VENDOR_ID}:${PRODUCT_ID} | cut -d' ' -f4 | cut -d':' -f1)
       USB_NAME=$(lsusb -d ${VENDOR_ID}:${PRODUCT_ID} | cut -d' ' -f7-)
       echo " - ${USB_NAME}"
-      USB_PASSTHROUGH="${USB_PASSTHROUGH} -device usb-host,vendorid=0x${VENDOR_ID},productid=0x${PRODUCT_ID},bus=xhci.0"
+      USB_PASSTHROUGH="-usb ${USB_PASSTHROUGH} -device usb-host,vendorid=0x${VENDOR_ID},productid=0x${PRODUCT_ID}"
 
       if [ ! -w /dev/bus/usb/${USB_BUS}/${USB_DEV} ]; then
         local EXEC_SCRIPT=1
@@ -394,6 +394,7 @@ function vm_boot() {
 
   # Boot the VM
   echo " - Launching \"${VM}\" with requested settings."
+  # For some reason, USB keyboard doesn't work in Windows. (It's not important anyway)
   ${QEMU} \
     -name ${VMNAME},process=${VMNAME} \
     -enable-kvm -machine q35,vmport=off,kernel_irqchip=on ${BIOS} \
@@ -403,8 +404,7 @@ function vm_boot() {
     ${hdd} ${STATUSQUO} \
     ${iso} ${second_iso} \
     ${display} -display ${UI},gl=${GL}${output_extra} \
-    # For some reason, USB keyboard doesn't work in Windows. (It's not important anyway)
-    -usb -device qemu-xhci,id=xhci,p2=8,p3=8 -device usb-tablet,bus=xhci.0 ${USB_PASSTHROUGH} \
+    -device qemu-xhci,id=xhci,p2=8,p3=8 -device usb-kbd,bus=xhci.0 -device usb-tablet,bus=xhci.0 ${USB_PASSTHROUGH} \
     -device virtio-net,netdev=nic -netdev ${NET},id=nic \
     -audiodev pa,id=pa,server=unix:${XDG_RUNTIME_DIR}/pulse/native,out.stream-name=${LAUNCHER}-${VMNAME},in.stream-name=${LAUNCHER}-${VMNAME} \
     -device intel-hda -device hda-duplex,audiodev=pa,mixer=off \
