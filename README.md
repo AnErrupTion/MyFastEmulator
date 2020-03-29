@@ -54,11 +54,6 @@ snap connect qemu-virgil:removable-media
  ~~* Boot the VM into the Windows installer of your choice (7, 10, etc...). Now, where the partitions should appear, click `Load driver`. In the following message box, click `Browse`, then go to the mounted ISO file, then go to `amd64`, then click on the folder that matches the Windows version you're installing (for example, win7). Now, load the driver, and the partition should appear!~~
  The bug above has been fixed, thus it is not needed anymore to manually add the VirtIO drivers (it now uses AHCI, which si detected by both Windows and Linux distros).
 
- ~~* NOTE : After the installation, install the guest tools from the mounted CD to get better performance.
- * Windows 8 and newer : Install the VirtIO Guest Tools (can be found at the very bottom).
- ~~* Currently, no guest tools have been found for Windows 7 and older. Sorry!~~
- Since we're not using VirtIO disk emulation, this is currently deprecated.
-
 ## FOR LINUX
 
   * Download an ISO image of a Linux distribution
