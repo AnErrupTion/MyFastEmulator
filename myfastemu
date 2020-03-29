@@ -65,46 +65,46 @@ function snapshot_info() {
 }
 
 function get_port() {
-    local PORT_START=22220
-    local PORT_RANGE=9
-    while true; do
-        local CANDIDATE=$[${PORT_START} + (${RANDOM} % ${PORT_RANGE})]
-        (echo "" >/dev/tcp/127.0.0.1/${CANDIDATE}) >/dev/null 2>&1
-        if [ $? -ne 0 ]; then
-            echo "${CANDIDATE}"
-            break
-        fi
-    done
+  local PORT_START=22220
+  local PORT_RANGE=9
+  while true; do
+    local CANDIDATE=$[${PORT_START} + (${RANDOM} % ${PORT_RANGE})]
+    (echo "" >/dev/tcp/127.0.0.1/${CANDIDATE}) >/dev/null 2>&1
+    if [ $? -ne 0 ]; then
+      echo "${CANDIDATE}"
+      break
+    fi
+  done
 }
 
 function enable_usb_passthrough() {
-   local DEVICE=""
-   local USB_BUS=""
-   local USB_DEV=""
-   local USB_NAME=""
-   local VENDOR_ID=""
-   local PRODUCT_ID=""
-   local TEMP_SCRIPT=$(mktemp)
-   local EXEC_SCRIPT=0
+  local DEVICE=""
+  local USB_BUS=""
+  local USB_DEV=""
+  local USB_NAME=""
+  local VENDOR_ID=""
+  local PRODUCT_ID=""
+  local TEMP_SCRIPT=$(mktemp)
+  local EXEC_SCRIPT=0
 
-   # Have any USB devices been requested for pass-through?
-   if (( ${#usb_devices[@]} )); then
-     echo " - USB: Device pass-through requested:"
-     echo "#!/usr/bin/env bash" > "${TEMP_SCRIPT}"
-     for DEVICE in "${usb_devices[@]}"; do
-       VENDOR_ID=$(echo ${DEVICE} | cut -d':' -f1)
-       PRODUCT_ID=$(echo ${DEVICE} | cut -d':' -f2)
-       USB_BUS=$(lsusb -d ${VENDOR_ID}:${PRODUCT_ID} | cut -d' ' -f2)
-       USB_DEV=$(lsusb -d ${VENDOR_ID}:${PRODUCT_ID} | cut -d' ' -f4 | cut -d':' -f1)
-       USB_NAME=$(lsusb -d ${VENDOR_ID}:${PRODUCT_ID} | cut -d' ' -f7-)
-       echo " - ${USB_NAME}"
-       USB_PASSTHROUGH="${USB_PASSTHROUGH} -device usb-host,vendorid=0x${VENDOR_ID},productid=0x${PRODUCT_ID},bus=xhci.0"
+  # Have any USB devices been requested for pass-through?
+  if (( ${#usb_devices[@]} )); then
+    echo " - USB: Device pass-through requested:"
+    echo "#!/usr/bin/env bash" > "${TEMP_SCRIPT}"
+    for DEVICE in "${usb_devices[@]}"; do
+      VENDOR_ID=$(echo ${DEVICE} | cut -d':' -f1)
+      PRODUCT_ID=$(echo ${DEVICE} | cut -d':' -f2)
+      USB_BUS=$(lsusb -d ${VENDOR_ID}:${PRODUCT_ID} | cut -d' ' -f2)
+      USB_DEV=$(lsusb -d ${VENDOR_ID}:${PRODUCT_ID} | cut -d' ' -f4 | cut -d':' -f1)
+      USB_NAME=$(lsusb -d ${VENDOR_ID}:${PRODUCT_ID} | cut -d' ' -f7-)
+      echo " - ${USB_NAME}"
+      USB_PASSTHROUGH="${USB_PASSTHROUGH} -device usb-host,vendorid=0x${VENDOR_ID},productid=0x${PRODUCT_ID},bus=xhci.0"
 
-       if [ ! -w /dev/bus/usb/${USB_BUS}/${USB_DEV} ]; then
-         local EXEC_SCRIPT=1
-         echo "chown root:${USER} /dev/bus/usb/${USB_BUS}/${USB_DEV}" >> "${TEMP_SCRIPT}"
-       fi
-     done
+      if [ ! -w /dev/bus/usb/${USB_BUS}/${USB_DEV} ]; then
+        local EXEC_SCRIPT=1
+        echo "chown root:${USER} /dev/bus/usb/${USB_BUS}/${USB_DEV}" >> "${TEMP_SCRIPT}"
+      fi
+    done
 
     if [ ${EXEC_SCRIPT} -eq 1 ]; then
       chmod +x "${TEMP_SCRIPT}"
@@ -115,7 +115,7 @@ function enable_usb_passthrough() {
       echo
       sudo "${TEMP_SCRIPT}"
       if [ $? -ne 0 ]; then
-       echo " - WARNING! Enabling USB device access failed."
+        echo " - WARNING! Enabling USB device access failed."
       fi
     else
       echo " - Requested USB device(s) are accessible."
@@ -263,10 +263,10 @@ function vm_boot() {
     iso="-drive media=cdrom,file="${iso}",index=0"
   fi
 
-  # Check if there is a driver ISO
-  if [ -n "${driver_iso}" ] && [ -e "${driver_iso}" ]; then
-    echo " - Windows VirtIO Drivers:  ${driver_iso}"
-    driver_iso="-drive media=cdrom,file="${driver_iso}",index=1"
+  # Check if there is a second ISO
+  if [ -n "${second_iso}" ] && [ -e "${second_iso}" ]; then
+    echo " - Second ISO:  ${second_iso}"
+    second_iso="-drive media=cdrom,file="${second_iso}",index=1"
   fi
 
   local cores="1"
@@ -292,13 +292,12 @@ function vm_boot() {
     echo " - Emulated CPU: ${ccpu}"
   fi
 
-  local acpu="-cpu ${ccpu},kvm=on"
+  ccpu="-cpu ${ccpu},kvm=on"
   local guest_tweaks=""
   local vga_adapter=""
   if [ ! -z ${windows_optimization} ] && [ ${windows_optimization} -eq 1 ]; then
     echo " - Windows optimization option enabled. Lemme optimize it real quick!"
-    acpu="-cpu ${ccpu},kvm=on,hv_time"
-    guest_tweaks="-no-hpet -no-fd-bootchk"
+    guest_tweaks=",hv_time -no-hpet -no-fd-bootchk"
     vga_adapter="qxl-vga"
   else
     vga_adapter="virtio-vga"
@@ -391,12 +390,12 @@ function vm_boot() {
   echo " - Launching \"${VM}\" with requested settings."
   ${QEMU} \
     -name ${VMNAME},process=${VMNAME} \
-    -enable-kvm -machine q35,vmport=off,kernel_irqchip=on ${BIOS} ${guest_tweaks} \
+    -enable-kvm -machine q35,vmport=off,kernel_irqchip=on ${BIOS} \
     -accel kvm,thread=multi \
-    ${acpu} -smp cores=${cores} \
+    ${ccpu}${guest_tweaks} -smp cores=${cores} \
     -m ${ram} -device virtio-balloon \
     ${hdd} ${STATUSQUO} \
-    ${iso} ${driver_iso} \
+    ${iso} ${second_iso} \
     ${display} -display ${UI},gl=${GL}${output_extra} \
     # For some reason, USB keyboard doesn't work in Windows. (It's not important anyway)
     -usb -device qemu-xhci,id=xhci,p2=8,p3=8 -device usb-tablet,bus=xhci.0 ${USB_PASSTHROUGH} \
