@@ -144,65 +144,62 @@ function vm_boot() {
   local UI="sdl"
   local QEMU_VER=$(${QEMU} -version | head -n1 | cut -d' ' -f4 | cut -d'(' -f1)
   echo " - Initializing \"${VM}\"'s settings."
-  echo " - QEMU:     ${QEMU} v${QEMU_VER}"
+  echo " - QEMU: ${QEMU} v${QEMU_VER}"
 
   # Fix KVM "permission denied" error (https://bugzilla.redhat.com/show_bug.cgi?id=1479558)
+  # Comment this line if you don't have any error related to this.
   sudo chmod 666 /dev/kvm
 
   if [ ! -z "${guest_ui}" ]; then
     UI="${guest_ui}"
-    echo " - UI:       ${UI} (choosed by user)"
+    echo " - UI: ${UI} (choosed by user)"
   else
-    echo " - UI:       ${UI}"
+    echo " - UI: ${UI}"
   fi
 
   if [ ! -z "${guest_gl}" ]; then
     GL="${guest_gl}"
-    echo " - GL:       ${GL} (choosed by user)"
+    echo " - GL: ${GL} (choosed by user)"
   else
-    echo " - GL:       ${GL}"
+    echo " - GL: ${GL}"
   fi
 
   local output_extra=""
-  if [ "${UI}" == "gtk" ]; then
+  if [ "${UI}" == "gtk" ] && [ "${GL}" == "on" ]; then
     output_extra=",grab-on-hover=on,zoom-to-fit=on"
     echo " - GTK UI is currently not compatible with GL. Turning GL off."
     GL="off"
   fi
 
-  if [ "${UI}" == "spice-app" ]; then
+  if [ "${UI}" == "spice-app" ] && [ "${GL}" == "on" ]; then
     echo " - spice-app UI is currently not compatible with GL. Turning GL off."
     GL="off"
   fi
 
   if [ ! -z "${guest_virgl}" ]; then
     VIRGL="${guest_virgl}"
-    echo " - VIRGL (Virgil3D):    ${VIRGL} (choosed by user)"
+    echo " - VIRGL (Virgil3D): ${VIRGL} (choosed by user)"
   else
-    echo " - VIRGL (Virgil3D):    ${VIRGL}"
+    echo " - VIRGL (Virgil3D): ${VIRGL}"
   fi
 
   local EFI_VARS=""
-  if [ ! -z "${efi_bios}" ]; then
-    if [ "${efi_bios}" -eq 1 ]; then
-      if [ -e "${VIRGIL_PATH}/usr/share/qemu/edk2-x86_64-code.fd" ] ; then
-          local EFI_CODE="${VIRGIL_PATH}/usr/share/qemu/edk2-x86_64-code.fd"
-          EFI_VARS="${VMNAME}-vars.fd"
+  if [ ! -z "${efi_bios}" ] && [ "${efi_bios}" -eq 1 ]; then
+    if [ -e "${VIRGIL_PATH}/usr/share/qemu/edk2-x86_64-code.fd" ] ; then
+      local EFI_CODE="${VIRGIL_PATH}/usr/share/qemu/edk2-x86_64-code.fd"
+      EFI_VARS="${VMNAME}-vars.fd"
 
-          if [ ! -e "${EFI_VARS}" ]; then
-            cp "${VIRGIL_PATH}/usr/share/qemu/edk2-i386-vars.fd" "${EFI_VARS}"
-          fi
-
-          BIOS="-drive if=pflash,format=raw,readonly,file=${EFI_CODE} -drive if=pflash,format=raw,file=${VMNAME}-vars.fd"
-          echo " - BIOS:     EFI"
-      else
-          echo " - EFI:      Booting requested but no EFI firmware found. Booting from Legacy BIOS."
+      if [ ! -e "${EFI_VARS}" ]; then
+        cp "${VIRGIL_PATH}/usr/share/qemu/edk2-i386-vars.fd" "${EFI_VARS}"
       fi
+
+      BIOS="-drive if=pflash,format=raw,readonly,file=${EFI_CODE} -drive if=pflash,format=raw,file=${VMNAME}-vars.fd"
+      echo " - BIOS: EFI"
     else
-      echo " - BIOS:     Legacy"
+        echo " - BIOS: Booting requested from EFI but no EFI firmware found. Booting from Legacy BIOS."
     fi
   else
-    echo " - BIOS:     Legacy"
+    echo " - BIOS: Legacy"
   fi
 
   local hdd=""
@@ -244,9 +241,10 @@ function vm_boot() {
         fi
       fi
     fi
-    hdd="-drive if=none,id=drive0,cache=directsync,aio=native,format=qcow2,file=${disk_img}"
-    hdd2="-device virtio-blk-pci,drive=drive0,scsi=off"
-    echo " - Disk:     ${disk_img} (${disk})"
+    # This line is for IDE HDD support. However, Windows XP and lower don't work even with an IDE HDD, so here it's useless, at least for now.
+    # hdd="-drive if=none,id=drive0,cache=directsync,aio=native,format=qcow2,file=${disk_img} -device virtio-blk-pci,drive=drive0,scsi=off"
+    hdd="-drive if=none,id=drive0,cache=directsync,aio=native,format=qcow2,file=${disk_img} -device ahci,id=ahci -device ide-hd,drive=drive0,bus=ahci.0"
+    echo " - Disk: ${disk_img} (${disk})"
   fi
 
   if [ ! -z ${disk_img_snapshot} ]; then
@@ -313,9 +311,9 @@ function vm_boot() {
   local ram="2G"
   if [ ! -z "${ram_gb}" ]; then
     ram="${ram_gb}"
-    echo " - RAM:      ${ram} (choosed by user)"
+    echo " - RAM: ${ram} (choosed by user)"
   else
-    echo " - RAM:      ${ram}"
+    echo " - RAM: ${ram}"
   fi
 
   local xres=1152
@@ -354,12 +352,11 @@ function vm_boot() {
   # Determine what display to use
   local display=""
   if [ "${vga_adapter}" == "virtio-vga" ]; then
-    if [ "${vga_adapter}" == "qxl-vga" ]; then
-      display="-device ${vga_adapter},xres=${xres},yres=${yres}"
-    else
-      display="-device ${vga_adapter},virgl=${VIRGL},xres=${xres},yres=${yres}"
-    fi
+    display="-device ${vga_adapter},virgl=${VIRGL},xres=${xres},yres=${yres}"
     echo " - Video:    ${vga_adapter}"
+  elif [ "${vga_adapter}" == "qxl-vga" ]; then
+    echo " - Warning : ${vga_adapter} will have no support for VirGL."
+    display="-device ${vga_adapter},xres=${xres},yres=${yres}"
   else
     echo " - Warning : ${vga_adapter} will have no support for VirGL."
     display="-device ${vga_adapter},vgamem_mb=${vga_memory},xres=${xres},yres=${yres}"
@@ -374,18 +371,18 @@ function vm_boot() {
   fi
 
   if [[ ${NET} == *"smb"* ]]; then
-    echo " - smbd:     ${HOME} will be exported to the guest via smb://10.0.2.4/qemu"
+    echo " - smbd: ${HOME} will be exported to the guest via smb://10.0.2.4/qemu"
   else
-    echo " - smbd:     ${HOME} will not be exported to the guest. \"smbd\" not found."
+    echo " - smbd: ${HOME} will not be exported to the guest. \"smbd\" not found."
   fi
 
   # Find a free port to expose ssh to the guest
   local PORT=$(get_port)
   if [ -n "${PORT}" ]; then
     NET="${NET},hostfwd=tcp::${PORT}-:22"
-    echo " - ssh:      ${PORT}/tcp is connected. Login via 'ssh user@localhost -p ${PORT}'"
+    echo " - ssh: ${PORT}/tcp is connected. Login via 'ssh user@localhost -p ${PORT}'"
   else
-    echo " - ssh:      All ports for exposing ssh have been exhausted."
+    echo " - ssh: All ports for exposing ssh have been exhausted."
   fi
 
   enable_usb_passthrough
@@ -398,18 +395,17 @@ function vm_boot() {
     -accel kvm,thread=multi \
     ${acpu} -smp cores=${cores} \
     -m ${ram} -device virtio-balloon \
-    ${hdd} \
-    ${hdd2} ${STATUSQUO} \
+    ${hdd} ${STATUSQUO} \
     ${iso} ${driver_iso} \
     ${display} -display ${UI},gl=${GL}${output_extra} \
-    -usb -device qemu-xhci,id=xhci,p2=8,p3=8 -device usb-kbd,bus=xhci.0 -device usb-tablet,bus=xhci.0 ${USB_PASSTHROUGH} \
+    # For some reason, USB keyboard doesn't work in Windows. (It's not important anyway)
+    -usb -device qemu-xhci,id=xhci,p2=8,p3=8 -device usb-tablet,bus=xhci.0 ${USB_PASSTHROUGH} \
     -device virtio-net,netdev=nic -netdev ${NET},id=nic \
     -audiodev pa,id=pa,server=unix:${XDG_RUNTIME_DIR}/pulse/native,out.stream-name=${LAUNCHER}-${VMNAME},in.stream-name=${LAUNCHER}-${VMNAME} \
     -device intel-hda -device hda-duplex,audiodev=pa,mixer=off \
     -rtc base=localtime,clock=host \
-    -object rng-random,id=rng0,filename=/dev/urandom \
-    -device virtio-rng-pci,rng=rng0 \
-    -spice port=5930,disable-ticketing \
+    -object rng-random,id=rng0,filename=/dev/urandom -device virtio-rng-pci,rng=rng0 \
+    -spice port=5930,disable-ticketing,gl=${GL} \
     -device virtio-serial-pci \
     -device virtserialport,chardev=spicechannel0,name=com.redhat.spice.0 \
     -chardev spicevmc,id=spicechannel0,name=vdagent \
@@ -445,7 +441,6 @@ SNAPSHOT=0
 STATUSQUO=""
 USB_PASSTHROUGH=""
 VM=""
-usb_devices=()
 
 while [ $# -gt 0 ]; do
   case "${1}" in
