@@ -45,17 +45,19 @@ snap connect qemu-virgil:removable-media
 
 ## FOR WINDOWS
 
-The Windows installer won't recognize your virtual HDD, which is (kind of) normal. To make it detect it, you'll have to install the VirtIO SCSI drivers. To do that, follow the steps below.
+~~The Windows installer won't recognize your virtual HDD, which is (kind of) normal. To make it detect it, you'll have to install the VirtIO SCSI drivers. To do that, follow the steps below.
 
- * Download the complete [VirtIO drivers ISO file](https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/latest-virtio/virtio-win.iso), rename it to whatever you want (example : `virtio_drivers.iso`) then place it wherever you want (example : in the directory where there is MyFastEmulator).
+ ~~* Download the complete [VirtIO drivers ISO file](https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/latest-virtio/virtio-win.iso), rename it to whatever you want (example : `virtio_drivers.iso`) then place it wherever you want (example : in the directory where there is MyFastEmulator).
 
- * Edit your configuration file, and add this line : `driver_iso="virtio_drivers.iso"`. Save the file, and close it.
+ ~~* Edit your configuration file, and add this line : `driver_iso="virtio_drivers.iso"`. Save the file, and close it.
 
- * Boot the VM into the Windows installer of your choice (7, 10, etc...). Now, where the partitions should appear, click `Load driver`. In the following message box, click `Browse`, then go to the mounted ISO file, then go to `amd64`, then click on the folder that matches the Windows version you're installing (for example, win7). Now, load the driver, and the partition should appear!
+ ~~* Boot the VM into the Windows installer of your choice (7, 10, etc...). Now, where the partitions should appear, click `Load driver`. In the following message box, click `Browse`, then go to the mounted ISO file, then go to `amd64`, then click on the folder that matches the Windows version you're installing (for example, win7). Now, load the driver, and the partition should appear!~~
+ The bug above has been fixed, thus it is not needed anymore to manually add the VirtIO drivers (it now uses AHCI, which si detected by both Windows and Linux distros).
 
- * NOTE : After the installation, install the guest tools from the mounted CD to get better performance.
+ ~~* NOTE : After the installation, install the guest tools from the mounted CD to get better performance.
  * Windows 8 and newer : Install the VirtIO Guest Tools (can be found at the very bottom).
- * Currently, no guest tools have been found for Windows 7 and older. Sorry!
+ ~~* Currently, no guest tools have been found for Windows 7 and older. Sorry!~~
+ Since we're not using VirtIO disk emulation, this is currently deprecated.
 
 ## FOR LINUX
 
