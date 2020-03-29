@@ -4,13 +4,13 @@
   MyFastEmulator
 </h1>
 
-<p align="center"><b>Simple shell script to "manage" Qemu virtual machines.</b></p>
+<p align="center"><b>Easily manage your QEMU virtual machines.</b></p>
 <div align="center"><img src=".github/screenshot.png" alt="MyFastEmulator Screenshot" /></div>
 <p align="center">Made with 💝 for <img src="https://raw.githubusercontent.com/anythingcodes/slack-emoji-for-techies/gh-pages/emoji/tux.png" align="top" width="24" /></p>
 
 ## Introduction
 
-MyFastEmulator is a fork of the <a href="https://github.com/wimpysworld/quickemu">Quickemu</a> project which aims to be a more complete and user-friendly version than Quickemu. But overall, it's a very simple script to "manage" QEMU virtual machines. Each
+MyFastEmulator is a fork of the <a href="https://github.com/wimpysworld/quickemu">Quickemu</a> project which aims to be a more complete and user-friendly version than Quickemu. But overall, it allows you to easily manage your QEMU virtual machines without any hassle. Each
 virtual machine configuration is requiring minimal but very useful configuration, such as total CPU cores, emulated cpu, RAM, and even more. The
 main objective of the project is to enable quick testing of desktop Linux
 distributions AND Windows operating systems where the virtual machines can be stored anywhere, such as
