@@ -91,11 +91,12 @@ You can also pass optional parameters
 
 ## TODO
 
+  - [ ] Add full macOS support
   - [x] Make display configuration more robust
   - [x] Improve stdout presentation
   - [x] Make disk image size configurable
   - [x] Improve snapshot management
-  - [ ] Make an option to create a desktop launcher (shortcut) for a VM
+  - [ ] Add option to create a desktop launcher (shortcut) for a VM
   - [x] Add support for Virgil3D
   - [x] Add support for GL
   - [x] Get QEMU `-audiodev` working for audio input
