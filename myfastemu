@@ -98,7 +98,7 @@ function enable_usb_passthrough() {
       USB_DEV=$(lsusb -d ${VENDOR_ID}:${PRODUCT_ID} | cut -d' ' -f4 | cut -d':' -f1)
       USB_NAME=$(lsusb -d ${VENDOR_ID}:${PRODUCT_ID} | cut -d' ' -f7-)
       echo " - ${USB_NAME}"
-      USB_PASSTHROUGH="-usb ${USB_PASSTHROUGH} -device usb-host,vendorid=0x${VENDOR_ID},productid=0x${PRODUCT_ID}"
+      USB_PASSTHROUGH="${USB_PASSTHROUGH} -device usb-host,vendorid=0x${VENDOR_ID},productid=0x${PRODUCT_ID},bus=xhci.0"
 
       if [ ! -w /dev/bus/usb/${USB_BUS}/${USB_DEV} ]; then
         local EXEC_SCRIPT=1
@@ -246,7 +246,7 @@ function vm_boot() {
     # hdd="-drive if=none,id=drive0,cache=directsync,aio=native,format=qcow2,file=${disk_img} -device virtio-blk-pci,drive=drive0,scsi=off"
     if [ ! -z ${emulate_disk_aio} ]; then
       hdd="-drive if=none,id=drive0,cache=directsync,aio=${emulate_disk_aio},format=qcow2,file=${disk_img} -device ahci,id=ahci -device ide-hd,drive=drive0,bus=ahci.0"
-      echo " - Disk: ${disk_img} (${disk}). I/O is ${emulate_disk_aio}."
+      echo " - Disk: ${disk_img} (${disk}). I/O is ${emulate_disk_aio} (choosed by user)."
     else
       hdd="-drive if=none,id=drive0,cache=directsync,aio=native,format=qcow2,file=${disk_img} -device ahci,id=ahci -device ide-hd,drive=drive0,bus=ahci.0"
       echo " - Disk: ${disk_img} (${disk}). I/O is native."
@@ -275,14 +275,9 @@ function vm_boot() {
     second_iso="-drive media=cdrom,file="${second_iso}",index=1"
   fi
 
-  local cores="1"
-  local allcores=$(nproc --all)
-  if [ ${allcores} -ge 8 ]; then
-    cores="4"
-  elif [ ${allcores} -ge 4 ]; then
-    cores="2"
-  fi
-
+  # Since we can have more cores than the host CPU, let's just put all
+  # the host's CPU cores by default
+  local cores=$(nproc --all)
   if [ ! -z "${total_cores}" ]; then
     cores="${total_cores}"
     echo " - CPU Cores: ${cores} Core(s) (choosed by user)"
@@ -300,13 +295,22 @@ function vm_boot() {
 
   ccpu="-cpu ${ccpu},kvm=on"
   local guest_tweaks=""
-  local vga_adapter=""
-  if [ ! -z ${windows_optimization} ] && [ ${windows_optimization} -eq 1 ]; then
-    echo " - Windows optimization option enabled. Lemme optimize it real quick!"
-    guest_tweaks=",hv_time -no-hpet -no-fd-bootchk"
-    vga_adapter="qxl-vga"
+  local vga_adapter="virtio-vga"
+  if [ ! -z ${windows_optimization} ]; then
+    if [ ${windows_optimization} -eq 1 ]; then
+      echo " - Windows optimization option enabled. Lemme optimize it real quick!"
+      guest_tweaks=",hv_time -no-hpet -no-fd-bootchk"
+      vga_adapter="qxl-vga"
+    elif [ ${windows_optimization} -eq 2 ]; then
+      echo " - Mac OS optimization option enabled. Lemme optimize it real quick!"
+      echo " - WARNING! This feature might not work as expected yet."
+      ccpu="-cpu Penryn,vendor=GenuineIntel,kvm=on,+sse3,+sse4.2,+aes,+xsave,+avx,+xsaveopt,+xsavec,+xgetbv1,+avx2,+bmi2,+smep,+bmi1,+fma,+movbe,+invtsc"
+      guest_tweaks=" -device isa-applesmc,osk=\"ourhardworkbythesewordsguardedpleasedontsteal(c)AppleComputerInc\""
+    else
+      echo " - Linux optimization option enabled. Lemme optimize it real quick!"
+    fi
   else
-    vga_adapter="virtio-vga"
+    echo " - No optimization option enabled. I'll assume Linux is the guest's OS!"
   fi
 
   if [ ! -z ${force_classic_vga} ] && [ ${force_classic_vga} -eq 1 ]; then
@@ -314,6 +318,15 @@ function vm_boot() {
   fi
 
   local ram="2G"
+  local host_ram=$(free --mega -h | grep Mem | cut -d':' -f2 | cut -d'G' -f1 | sed 's/ //g')
+  # Round up : https://github.com/wimpysworld/quickemu/issues/11
+  host_ram=$(printf '%.*f\n' 0 ${host_ram})
+  if [ ${host_ram} -ge 64 ] || [ ${host_ram} -ge 32 ]; then
+    ram="16G"
+  elif [ ${host_ram} -ge 16 ] || [ ${host_ram} -ge 8 ]; then
+    ram="4G"
+  fi
+
   if [ ! -z "${ram_gb}" ]; then
     ram="${ram_gb}"
     echo " - RAM: ${ram} (choosed by user)"
@@ -358,14 +371,15 @@ function vm_boot() {
   local display=""
   if [ "${vga_adapter}" == "virtio-vga" ]; then
     display="-device ${vga_adapter},virgl=${VIRGL},xres=${xres},yres=${yres}"
-    echo " - Video:    ${vga_adapter}"
+    echo " - Video: ${vga_adapter}"
   elif [ "${vga_adapter}" == "qxl-vga" ]; then
     echo " - Warning : ${vga_adapter} will have no support for VirGL."
     display="-device ${vga_adapter},xres=${xres},yres=${yres}"
+    echo " - Video: ${vga_adapter}"
   else
     echo " - Warning : ${vga_adapter} will have no support for VirGL."
     display="-device ${vga_adapter},vgamem_mb=${vga_memory},xres=${xres},yres=${yres}"
-    echo " - Video:    ${vga_adapter} with ${vga_memory} MB (choosed by user)"
+    echo " - Video: ${vga_adapter} with ${vga_memory} MB (choosed by user)"
   fi
 
   # Set the hostname of the VM
@@ -390,31 +404,41 @@ function vm_boot() {
     echo " - ssh: All ports for exposing ssh have been exhausted."
   fi
 
+  # Has virtualization been requested?
+  local virtualization=""
+  if [ ! -z "${enable_iommu}" ]; then
+    if [ "${enable_iommu}" -eq 1 ]; then
+      virtualization="-device intel-iommu"
+    else
+      virtualization="-device amd-iommu"
+    fi
+  fi
+
   enable_usb_passthrough
 
   # Boot the VM
   echo " - Launching \"${VM}\" with requested settings."
-  # For some reason, USB keyboard doesn't work in Windows. (It's not important anyway)
   ${QEMU} \
     -name ${VMNAME},process=${VMNAME} \
-    -enable-kvm -machine q35,vmport=off,kernel_irqchip=on ${BIOS} \
-    -accel kvm,thread=multi \
+    -enable-kvm -accel kvm,thread=multi -machine q35,vmport=off,kernel_irqchip=on ${BIOS} \
+    -smbios type=2,manufacturer=AnErrupTion,product=MyFastEmulator \
     ${ccpu}${guest_tweaks} -smp cores=${cores} \
     -m ${ram} -device virtio-balloon \
     ${hdd} ${STATUSQUO} \
     ${iso} ${second_iso} \
     ${display} -display ${UI},gl=${GL}${output_extra} \
-    -device qemu-xhci,id=xhci,p2=8,p3=8 -device usb-kbd,bus=xhci.0 -device usb-tablet,bus=xhci.0 ${USB_PASSTHROUGH} \
-    -device virtio-net,netdev=nic -netdev ${NET},id=nic \
+    -usb -device qemu-xhci,id=xhci,p2=8,p3=8 ${USB_PASSTHROUGH} \
+    -device virtio-keyboard -device virtio-tablet \
+    -device rtl8139,netdev=nic -netdev ${NET},id=nic \
     -audiodev pa,id=pa,server=unix:${XDG_RUNTIME_DIR}/pulse/native,out.stream-name=${LAUNCHER}-${VMNAME},in.stream-name=${LAUNCHER}-${VMNAME} \
     -device intel-hda -device hda-duplex,audiodev=pa,mixer=off \
     -rtc base=localtime,clock=host \
     -object rng-random,id=rng0,filename=/dev/urandom -device virtio-rng-pci,rng=rng0 \
+    ${virtualization} -show-cursor -seed $(($RANDOM * $RANDOM)) \
     -spice port=5930,disable-ticketing,gl=${GL} \
     -device virtio-serial-pci \
     -device virtserialport,chardev=spicechannel0,name=com.redhat.spice.0 \
     -chardev spicevmc,id=spicechannel0,name=vdagent \
-    -serial pty -parallel none \
     "$@"
   echo " - The VM has been shut down."
   if [ -e "${EFI_VARS}" ]; then
