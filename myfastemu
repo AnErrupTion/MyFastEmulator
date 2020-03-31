@@ -1,6 +1,31 @@
 #!/usr/bin/env bash
 export LC_ALL=C
 
+function shortcut_delete() {
+  local SHORTCUT_DIR="/home/${USER}/.local/share/applications"
+  if [ -e ~/.local/share/applications/${VMNAME}.desktop ]; then
+    rm "${SHORTCUT_DIR}/${VMNAME}.desktop"
+    echo " - Deleted the desktop shortcut of the current VM." 
+  fi
+}
+
+function shortcut_create() {
+  shortcut_delete
+  local filename="/home/${USER}/.local/share/applications/${VMNAME}.desktop"
+  cat << EOF > ${filename}
+[Desktop Entry]
+Name=${VMNAME}
+Comment=Launch QEMU VM ${VMNAME}
+Exec=${LAUNCHER_DIR}/${LAUNCHER} -vm ${LAUNCHER_DIR}/${VM}
+Icon=/snap/qemu-virgil/74/meta/gui/icon.png
+Terminal=true
+Type=Application
+Version=1.0
+EOF
+  chmod 777 "${filename}"
+  echo " - Created a desktop shortcut for the current VM."
+}
+
 function snapshot_apply() {
   local snapshot_tag="${1}"
   if [ -z "${snapshot_tag}" ]; then
@@ -125,6 +150,7 @@ function enable_usb_passthrough() {
  }
 
 function vm_boot() {
+  echo
   echo " ----------------------------------------------------------------------"
   echo " |--aaaaaa--aaa-aaaa-||||||--MyFastEmulator--||||||-aaaaaa--aaa-aaaa--|"
   echo " |--a-aa-a--a---aaa--||||||--MyFastEmulator--||||||-a-aa-a--a---aaa---|"
@@ -133,7 +159,6 @@ function vm_boot() {
   echo " -------------------------|||  Loading...  |||-------------------------"
   echo
 
-  local VMNAME=$(basename "${VM}" .conf)
   local VMDIR=""
   if [ -f "${disk_img}" ]; then
     VMDIR=$(dirname "${disk_img}")
@@ -148,7 +173,8 @@ function vm_boot() {
 
   # Fix KVM "permission denied" error (https://bugzilla.redhat.com/show_bug.cgi?id=1479558)
   # Comment this line if you don't have any error related to this.
-  sudo chmod 666 /dev/kvm
+  # Don't worry, this command is one-time (once) only.
+  # sudo chown $USER /dev/kvm
 
   if [ ! -z "${guest_ui}" ]; then
     UI="${guest_ui}"
@@ -452,6 +478,8 @@ function usage() {
   echo "  ${LAUNCHER} --vm CONFIG_FILE.conf"
   echo
   echo "You can also pass optional parameters :"
+  echo "  --delete                : Delete the desktop shortcut."
+  echo "  --shortcut              : Create a desktop shortcut."
   echo "  --snapshot apply <tag>  : Apply/restore a snapshot."
   echo "  --snapshot create <tag> : Create a snapshot."
   echo "  --snapshot delete <tag> : Delete a snapshot."
@@ -464,12 +492,16 @@ readonly QEMU_IMG="/snap/bin/qemu-virgil.qemu-img"
 readonly LAUNCHER=$(basename "${0}")
 readonly DISK_MIN_SIZE=$((197632 * 8))
 readonly VIRGIL_PATH="/snap/qemu-virgil/current"
+readonly LAUNCHER_DIR="$(dirname "$(realpath "$0")")"
+VMNAME=""
 SNAPSHOT_ACTION=""
 SNAPSHOT_TAG=""
 SNAPSHOT=0
 STATUSQUO=""
 USB_PASSTHROUGH=""
 VM=""
+SHORTCUT=0
+DELETE=0
 
 while [ $# -gt 0 ]; do
   case "${1}" in
@@ -490,7 +522,14 @@ while [ $# -gt 0 ]; do
       shift;;
     -vm|--vm)
       VM="${2}"
+      VMNAME=$(basename "${VM}" .conf)
       shift
+      shift;;
+    -shortcut|--shortcut)
+      SHORTCUT=1
+      shift;;
+    -delete|--delete)
+      DELETE=1
       shift;;
     -h|--h|-help|--help)
       usage;;
@@ -541,6 +580,16 @@ if [ ${SNAPSHOT} -eq 1 ]; then
     usage;;
     esac
   fi
+fi
+
+if [ ${DELETE} -eq 1 ]; then
+  shortcut_delete
+  exit
+fi
+
+if [ ${SHORTCUT} -eq 1 ]; then
+  shortcut_create
+  exit
 fi
 
 vm_boot
