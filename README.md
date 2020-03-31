@@ -72,6 +72,13 @@ disk=60G
 ./myfastemu -vm your_configuration_file.conf
 ```
 
+  * A Desktop shortcut can be created (in ~/.local/share/applications):
+```
+./myfastemu -vm your_configuration_file.conf -shortcut
+```
+
+  * NOTE : If you have an error where it cannot find the virtual HDD or that you haven't specified an ISO image (with desktop shortcut, at the startup of the VM) then you need to **add the full path of the virtual HDD AND ISO in the configuration file**.
+
 Which will output something like this:
 
 <div align="center"><img src=".github/screenshot2.png" alt="MyFastEmulator Console Screenshot" /></div>
@@ -83,6 +90,8 @@ Usage
   ./myfastemu -vm your_configuration_file.conf
 
 You can also pass optional parameters
+  --delete                : Delete the desktop shortcut.
+  --shortcut              : Create a desktop shortcut.
   --snapshot apply <tag>  : Apply/restore a snapshot.
   --snapshot create <tag> : Create a snapshot.
   --snapshot delete <tag> : Delete a snapshot.
@@ -96,7 +105,7 @@ You can also pass optional parameters
   - [x] Improve stdout presentation
   - [x] Make disk image size configurable
   - [x] Improve snapshot management
-  - [ ] Add option to create a desktop launcher (shortcut) for a VM
+  - [x] Add option to create a desktop launcher (shortcut) for a VM (https://github.com/wimpysworld/quickemu/pull/18)
   - [x] Add support for Virgil3D
   - [x] Add support for GL
   - [x] Get QEMU `-audiodev` working for audio input
