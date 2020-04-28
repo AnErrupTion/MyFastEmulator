@@ -16,7 +16,7 @@ main objective of the project is to enable quick testing of desktop Linux
 distributions AND Windows operating systems where the virtual machines can be stored anywhere, such as
 external USB storage.
 
-MyFastEmulator is faster than its competitors, for a few reasons. First, it uses emulation rather than pure virtualization. This allows, for example, to use a CPU NOT matching the host one. This also allows better VM performance and less CPU usage since it won't directly use the host CPU. Second, it's very minimal compareed to virt-manager, for example. It requires very minimal configuration and doesn't have too much features. And lastly, because it uses KVM as the main accelerator. VMware just can't use KVM, while VirtualBox "sort of can" use it as an option (however, KVM on Windows isn't real KVM as we all know). virt-manager, on the other hand, uses KVM. But it's not as fast as MyFastEmulator. MyFastEmulator is also a frontend to the fully
+MyFastEmulator is faster than its competitors, for a few reasons. First, it uses emulation rather than pure virtualization. This allows, for example, to use a CPU NOT matching the host one. This also allows better VM performance and less CPU usage since it won't directly use the host CPU. Second, it's very minimal compared to virt-manager, for example. It requires very minimal configuration and doesn't have too much features. And lastly, because it uses KVM as the main accelerator. VMware just can't use KVM, while VirtualBox "sort of can" use it as an option (however, KVM on Windows isn't real KVM as we all know). virt-manager, on the other hand, uses KVM. But it's not as fast as MyFastEmulator. MyFastEmulator is also a frontend to the fully
 accelerated [qemu-virgil](https://snapcraft.io/qemu-virgil). See the video
 where wimpysworld explains some of his motivations for creating the original script :
 
@@ -52,7 +52,7 @@ snap connect qemu-virgil:removable-media
  ~~* Edit your configuration file, and add this line : `driver_iso="virtio_drivers.iso"`. Save the file, and close it.~~
 
  ~~* Boot the VM into the Windows installer of your choice (7, 10, etc...). Now, where the partitions should appear, click `Load driver`. In the following message box, click `Browse`, then go to the mounted ISO file, then go to `amd64`, then click on the folder that matches the Windows version you're installing (for example, win7). Now, load the driver, and the partition should appear!~~
- The bug above has been fixed, thus it is not needed anymore to manually add the VirtIO drivers (it now uses AHCI, which si detected by both Windows and Linux distros).
+ The bug above has been fixed, thus it is not needed anymore to manually add the VirtIO drivers (it now uses AHCI, which is detected by both Windows and Linux distros).
 
 ## FOR LINUX
 
