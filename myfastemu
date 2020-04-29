@@ -5,7 +5,7 @@ function shortcut_delete() {
   local SHORTCUT_DIR="/home/${USER}/.local/share/applications"
   if [ -e ~/.local/share/applications/${VMNAME}.desktop ]; then
     rm "${SHORTCUT_DIR}/${VMNAME}.desktop"
-    echo " - Deleted the desktop shortcut of the current VM." 
+    echo " - Deleted the desktop shortcut of the current VM."
   fi
 }
 
@@ -17,12 +17,11 @@ function shortcut_create() {
 Name=${VMNAME}
 Comment=Launch QEMU VM ${VMNAME}
 Exec=${LAUNCHER_DIR}/${LAUNCHER} -vm ${LAUNCHER_DIR}/${VM}
-Icon=/snap/qemu-virgil/74/meta/gui/icon.png
+Icon=${VIRGIL_PATH}/meta/gui/icon.png
 Terminal=true
 Type=Application
 Version=1.0
 EOF
-  chmod 777 "${filename}"
   echo " - Created a desktop shortcut for the current VM."
 }
 
@@ -96,7 +95,6 @@ function get_port() {
     local CANDIDATE=$[${PORT_START} + (${RANDOM} % ${PORT_RANGE})]
     (echo "" >/dev/tcp/127.0.0.1/${CANDIDATE}) >/dev/null 2>&1
     if [ $? -ne 0 ]; then
-      echo "${CANDIDATE}"
       break
     fi
   done
@@ -164,17 +162,16 @@ function vm_boot() {
     VMDIR=$(dirname "${disk_img}")
   fi
   local BIOS=""
-  local GL="on"
-  local VIRGL="on"
-  local UI="sdl"
+  local GL="off"
+  local VIRGL="off"
+  local UI="gtk"
   local QEMU_VER=$(${QEMU} -version | head -n1 | cut -d' ' -f4 | cut -d'(' -f1)
   echo " - Initializing \"${VM}\"'s settings."
   echo " - QEMU: ${QEMU} v${QEMU_VER}"
 
   # Fix KVM "permission denied" error (https://bugzilla.redhat.com/show_bug.cgi?id=1479558)
   # Comment this line if you don't have any error related to this.
-  # Don't worry, this command is one-time (once) only.
-  # sudo chown $USER /dev/kvm
+  # sudo chown $USER /dev/kvm | OR | sudo chmod 666 /dev/kvm | OR | sudo chmod 777 -R /dev/kvm
 
   if [ ! -z "${guest_ui}" ]; then
     UI="${guest_ui}"
@@ -183,23 +180,25 @@ function vm_boot() {
     echo " - UI: ${UI}"
   fi
 
-  if [ ! -z "${guest_gl}" ]; then
-    GL="${guest_gl}"
-    echo " - GL: ${GL} (choosed by user)"
-  else
-    echo " - GL: ${GL}"
-  fi
-
   local output_extra=""
-  if [ "${UI}" == "gtk" ] && [ "${GL}" == "on" ]; then
+  if [ "${UI}" == "gtk" ]; then
     output_extra=",grab-on-hover=on,zoom-to-fit=on"
-    echo " - GTK UI is currently not compatible with GL. Turning GL off."
-    GL="off"
+    if [ "${GL}" == "on" ]; then
+      echo " - GTK UI is currently not compatible with GL. Turning GL off."
+      GL="off"
+    fi
   fi
 
   if [ "${UI}" == "spice-app" ] && [ "${GL}" == "on" ]; then
     echo " - spice-app UI is currently not compatible with GL. Turning GL off."
     GL="off"
+  fi
+
+  if [ ! -z "${guest_gl}" ]; then
+    GL="${guest_gl}"
+    echo " - GL: ${GL} (choosed by user)"
+  else
+    echo " - GL: ${GL}"
   fi
 
   if [ ! -z "${guest_virgl}" ]; then
@@ -219,7 +218,7 @@ function vm_boot() {
         cp "${VIRGIL_PATH}/usr/share/qemu/edk2-i386-vars.fd" "${EFI_VARS}"
       fi
 
-      BIOS="-drive if=pflash,format=raw,readonly,file=${EFI_CODE} -drive if=pflash,format=raw,file=${VMNAME}-vars.fd"
+      BIOS="-drive if=pflash,format=raw,readonly,file=${EFI_CODE} -drive if=pflash,format=raw,file=${EFI_VARS}"
       echo " - BIOS: EFI"
     else
         echo " - BIOS: Booting requested from EFI but no EFI firmware found. Booting from Legacy BIOS."
@@ -322,21 +321,21 @@ function vm_boot() {
   ccpu="-cpu ${ccpu},kvm=on"
   local guest_tweaks=""
   local vga_adapter="virtio-vga"
-  if [ ! -z ${windows_optimization} ]; then
-    if [ ${windows_optimization} -eq 1 ]; then
+  if [ ! -z ${system_optimization} ]; then
+    if [ ${system_optimization} -eq 1 ]; then
       echo " - Windows optimization option enabled. Lemme optimize it real quick!"
       guest_tweaks=",hv_time -no-hpet -no-fd-bootchk"
       vga_adapter="qxl-vga"
-    elif [ ${windows_optimization} -eq 2 ]; then
+    elif [ ${system_optimization} -eq 2 ]; then
       echo " - Mac OS optimization option enabled. Lemme optimize it real quick!"
       echo " - WARNING! This feature might not work as expected yet."
       ccpu="-cpu Penryn,vendor=GenuineIntel,kvm=on,+sse3,+sse4.2,+aes,+xsave,+avx,+xsaveopt,+xsavec,+xgetbv1,+avx2,+bmi2,+smep,+bmi1,+fma,+movbe,+invtsc"
       guest_tweaks=" -device isa-applesmc,osk=\"ourhardworkbythesewordsguardedpleasedontsteal(c)AppleComputerInc\""
     else
-      echo " - Linux optimization option enabled. Lemme optimize it real quick!"
+      echo " - Linux optimization option enabled. No optimization needed!"
     fi
   else
-    echo " - No optimization option enabled. I'll assume Linux is the guest's OS!"
+    echo " - No optimization option enabled."
   fi
 
   if [ ! -z ${force_classic_vga} ] && [ ${force_classic_vga} -eq 1 ]; then
