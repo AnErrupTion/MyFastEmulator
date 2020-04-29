@@ -91,4 +91,4 @@ You can also pass optional parameters
   - [x] Improve performance
   - [x] Add USB pass-through support
   - [ ] Add a version system
-  - [ ] Add NVMe support
+  - [x] Add NVMe support
