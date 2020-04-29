@@ -267,11 +267,15 @@ function vm_boot() {
 
     # This line is for IDE HDD support. However, Windows XP and lower don't work even with an IDE HDD, so here it's useless, at least for now.
     # hdd="-drive if=none,id=drive0,cache=directsync,aio=native,format=qcow2,file=${disk_img} -device virtio-blk-pci,drive=drive0,scsi=off"
+
+    # This line is for regular SATA HDD support.
+    # -drive if=none,id=drive0,cache=directsync,aio=native,format=qcow2,file=${disk_img} -device ahci,id=ahci -device ide-hd,drive=drive0,bus=ahci.0
+
     if [ ! -z ${emulate_disk_aio} ]; then
-      hdd="-drive if=none,id=drive0,cache=directsync,aio=${emulate_disk_aio},format=qcow2,file=${disk_img} -device ahci,id=ahci -device ide-hd,drive=drive0,bus=ahci.0"
+      hdd="-drive if=none,id=drive0,cache=directsync,aio=${emulate_disk_aio},format=qcow2,file=${disk_img} -device nvme,drive=drive0,serial=1234"
       echo " - Disk: ${disk_img} (${disk}). I/O is ${emulate_disk_aio} (choosed by user)."
     else
-      hdd="-drive if=none,id=drive0,cache=directsync,aio=native,format=qcow2,file=${disk_img} -device ahci,id=ahci -device ide-hd,drive=drive0,bus=ahci.0"
+      hdd="-drive if=none,id=drive0,cache=directsync,aio=native,format=qcow2,file=${disk_img} -device nvme,drive=drive0,serial=1234"
       echo " - Disk: ${disk_img} (${disk}). I/O is native."
     fi
   fi
@@ -438,7 +442,7 @@ function vm_boot() {
     ${display} -display ${UI},gl=${GL}${output_extra} \
     -usb -device qemu-xhci,id=xhci,p2=8,p3=8 ${USB_PASSTHROUGH} \
     -device virtio-keyboard -device virtio-tablet \
-    -device rtl8139,netdev=nic -netdev ${NET},id=nic \
+    -device e1000,netdev=nic -netdev ${NET},id=nic \
     -audiodev pa,id=pa,server=unix:${XDG_RUNTIME_DIR}/pulse/native,out.stream-name=${LAUNCHER}-${VMNAME},in.stream-name=${LAUNCHER}-${VMNAME} \
     -device intel-hda -device hda-duplex,audiodev=pa,mixer=off \
     -rtc base=localtime,clock=host \
