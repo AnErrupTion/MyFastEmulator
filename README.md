@@ -8,6 +8,9 @@
 <div align="center"><img src=".github/screenshot.png" alt="MyFastEmulator Screenshot" /></div>
 <p align="center">Made with 💝 for <img src="https://raw.githubusercontent.com/anythingcodes/slack-emoji-for-techies/gh-pages/emoji/tux.png" align="top" width="24" /></p>
 
+## NOTE
+MyFastEmulator v2 development has started. To download and test it, please go to the branch "mfe-v2".
+
 ## Introduction
 
 MyFastEmulator is a fork of the <a href="https://github.com/wimpysworld/quickemu">Quickemu</a> project which aims to be a more complete and user-friendly version than Quickemu. But overall, it allows you to easily manage your QEMU virtual machines without any hassle. Each
@@ -27,7 +30,7 @@ where wimpysworld explains some of his motivations for creating the original scr
 Clone this repository:
 
 ```
-git clone https://github.com/AnErrupTion/MyFastEmulator.git
+git clone --single-branch --branch=master https://github.com/AnErrupTion/MyFastEmulator.git
 ```
 
 Install the `qemu-virgil` snap. You can find details about how to install snapd
