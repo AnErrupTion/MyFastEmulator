@@ -29,6 +29,7 @@ Terminal=true
 Type=Application
 Version=1.0
 EOF
+  chmod 777 ${filename}
   echo " - Created a desktop shortcut for the current VM."
 }
 
@@ -177,19 +178,14 @@ function vm_boot() {
   echo " - QEMU: ${QEMU} v${QEMU_VER}"
 
   # Fix KVM "permission denied" error (https://bugzilla.redhat.com/show_bug.cgi?id=1479558)
-  # Comment this line if you don't have any error related to this.
-  # sudo chown $USER /dev/kvm | OR | sudo chmod 666 /dev/kvm | OR | sudo chmod 777 -R /dev/kvm
+  # Run the following command to fix the problem (note that you wanna run it at every startup of your computer) :
+  # sudo chown $USER /dev/kvm
 
   if [ ! -z "${guest_ui}" ]; then
     UI="${guest_ui}"
     echo " - UI: ${UI} (choosed by user)"
   else
     echo " - UI: ${UI}"
-  fi
-
-  local output_extra=""
-  if [ "${UI}" == "gtk" ]; then
-    output_extra=",grab-on-hover=on,zoom-to-fit=on"
   fi
 
   if [ ! -z "${guest_gl}" ]; then
@@ -265,11 +261,16 @@ function vm_boot() {
       fi
     fi
 
-    # This line is for IDE HDD support. However, Windows XP and lower don't work even with an IDE HDD, so here it's useless, at least for now.
-    # hdd="-drive if=none,id=drive0,cache=directsync,aio=native,format=qcow2,file=${disk_img} -device virtio-blk-pci,drive=drive0,scsi=off"
+    # The line for setting a virtual disk drive.
+    # vdd="-drive if=none,id=drive0,cache=directsync,aio=native,format=qcow2,file=${disk_img}"
+    # To emulate disk I/O :
+    # vdd="-drive if=none,id=drive0,cache=directsync,aio=threads,format=qcow2,file=${disk_img}"
+
+    # This line is for IDE HDD support. However, Windows XP and lower do not work even with an IDE HDD, so here it's useless, at least for now.
+    # hdd="${vdd} -device virtio-blk-pci,drive=drive0,scsi=off"
 
     # This line is for regular SATA HDD support.
-    # -drive if=none,id=drive0,cache=directsync,aio=native,format=qcow2,file=${disk_img} -device ahci,id=ahci -device ide-hd,drive=drive0,bus=ahci.0
+    # hdd="${vdd} -device ahci,id=ahci -device ide-hd,drive=drive0,bus=ahci.0"
 
     if [ ! -z ${emulate_disk_aio} ]; then
       hdd="-drive if=none,id=drive0,cache=directsync,aio=${emulate_disk_aio},format=qcow2,file=${disk_img} -device nvme,drive=drive0,serial=1234"
@@ -327,8 +328,18 @@ function vm_boot() {
     echo " - Windows optimization option enabled. Lemme optimize it real quick!"
     guest_tweaks=",hv_time -no-hpet -no-fd-bootchk"
     vga_adapter="qxl-vga"
+    UI="none"
   else
     echo " - No/Linux optimization option enabled."
+  fi
+
+  local output_extra=""
+  if [ "${UI}" == "gtk" ]; then
+    output_extra=",grab-on-hover=on,zoom-to-fit=on"
+  fi
+
+  if [ "${UI}" != "none" ] && [ "${UI}" != "spice-app" ]; then
+    UI="${UI},gl=${GL}"
   fi
 
   if [ ! -z ${force_classic_vga} ] && [ ${force_classic_vga} -eq 1 ]; then
@@ -431,32 +442,43 @@ function vm_boot() {
 
   # Boot the VM
   echo " - Launching \"${VM}\" with requested settings."
+  SPICE_PORT=5930
   ${QEMU} \
     -name ${VMNAME},process=${VMNAME} \
-    -accel kvm,kernel-irqchip=on -machine q35,vmport=off ${BIOS} \
+    -machine q35,vmport=off,accel=kvm:tcg,kernel-irqchip=on ${BIOS} -daemonize \
     -smbios type=2,manufacturer=AnErrupTion,product=MyFastEmulator-v2 \
     ${ccpu}${guest_tweaks} -smp cores=${cores} \
     -m ${ram} -device virtio-balloon \
     ${hdd} ${STATUSQUO} \
     ${iso} ${second_iso} \
-    ${display} -display ${UI},gl=${GL}${output_extra} \
+    ${display} -display ${UI}${output_extra} \
     -usb -device qemu-xhci,id=xhci,p2=8,p3=8 ${USB_PASSTHROUGH} \
-    -device virtio-keyboard -device virtio-tablet \
+    -device usb-kbd,bus=xhci.0 -device usb-tablet,bus=xhci.0 \
     -device e1000,netdev=nic -netdev ${NET},id=nic \
     -audiodev pa,id=pa,server=unix:${XDG_RUNTIME_DIR}/pulse/native,out.stream-name=${LAUNCHER}-${VMNAME},in.stream-name=${LAUNCHER}-${VMNAME} \
     -device intel-hda -device hda-duplex,audiodev=pa,mixer=off \
     -rtc base=localtime,clock=host \
     -object rng-random,id=rng0,filename=/dev/urandom -device virtio-rng-pci,rng=rng0 \
     ${virtualization} -seed $(($RANDOM * $RANDOM)) \
-    -spice port=5930,disable-ticketing \
+    -spice port=${SPICE_PORT},disable-ticketing \
     -device virtio-serial-pci \
     -device virtserialport,chardev=spicechannel0,name=com.redhat.spice.0 \
-    -chardev spicevmc,id=spicechannel0,name=vdagent \
-    "$@"
-  echo " - The VM has been shut down."
+    -chardev spicevmc,id=spicechannel0,name=vdagent
+  if [ ! -z ${system_optimization} ] && [ ${system_optimization} -eq 1 ]; then
+    # To use virt-viewer :
+    # remote-viewer --title ${VMNAME} spice://127.0.0.1:${SPICE_PORT}
+    spicy --title ${VMNAME} 127.0.0.1 -p ${SPICE_PORT}
+  fi
+  kill_vm
+}
+
+function kill_vm() {
+  read -p " - Press enter to shut down the VM."
+  killall ${VMNAME}
   if [ -e "${EFI_VARS}" ]; then
     rm "${EFI_VARS}"
   fi
+  read -p " - The VM has been shut down."
 }
 
 function usage() {
@@ -529,7 +551,7 @@ done
 # Check we have qemu-virgil available
 if [ ! -e "${QEMU}" ] && [ ! -e "${QEMU_IMG}" ]; then
   echo " - ${FONT_RED}ERROR!${FONT_RESET} QEMU not found. Please compile and install QEMU from our GitHub page."
-  echo "          https://github.com/AnErrupTion/qemu-mfe"
+  echo "          https://github.com/AnErrupTion/MyFastEmulator/tree/mfe-v2"
   exit 1
 fi
 
