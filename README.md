@@ -90,5 +90,5 @@ You can also pass optional parameters
   - [x] Add Windows support
   - [x] Improve performance
   - [x] Add USB pass-through support
-  - [ ] Add a version system
+  - [x] Add a version system
   - [x] Add NVMe support
