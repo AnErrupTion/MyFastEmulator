@@ -29,7 +29,7 @@ Clone this repository :
 git clone --single-branch --branch=mfe-v2 https://github.com/AnErrupTion/MyFastEmulator.git
 ```
 
-Compile and "install" QEMU v5.0. Instructions on how to do these can be found in the `compile_qemu.txt` file.
+Download and install QEMU v5.0.0 by clicking [here](https://mega.nz/file/sqx3SSzQ#LolQr9IMqCdsaPozRbU21laT5VWz_YlJbYHjbJ-N_Ac)
 
 ## Usage
 
