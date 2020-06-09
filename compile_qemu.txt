@@ -7,9 +7,15 @@ Now, cd into that directory :
 $ cd qemu-X.X.X
 
 Where X are the version numbers.
-Now, you'll need to install all required dependencies to build QEMU :
+Now, you'll need to install all required dependencies to build QEMU.
+
+On Debian :
 
 $ sudo apt-get install build-essential libgtk-3-dev libvte-2.91-dev libspice-server-dev libusb-1.0-0-dev libcap-ng-dev libattr1-dev libaio-dev
+
+On Ubuntu :
+
+$ sudo apt-get build-dep qemu-kvm
 
 After that, use the configure file to enable required features for MFE v2 :
 
