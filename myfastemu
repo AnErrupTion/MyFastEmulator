@@ -264,29 +264,28 @@ function vm_boot() {
         fi
       fi
     fi
-
-    # The line for setting a virtual disk drive.
-    # vdd="-drive if=none,id=drive0,cache=directsync,aio=native,format=qcow2,file=${disk_img}"
-    # To emulate disk I/O :
-    # vdd="-drive if=none,id=drive0,cache=directsync,aio=threads,format=qcow2,file=${disk_img}"
-
-    # This line is for IDE HDD support. However, Windows XP and lower do not work even with an IDE HDD, so here it's useless, at least for now.
-    # hdd="${vdd} -device virtio-blk-pci,drive=drive0,scsi=off"
-
-    # This line is for regular SATA HDD support.
-    # hdd="${vdd} -device ahci,id=ahci -device ide-hd,drive=drive0,bus=ahci.0"
-
+    
+    local VDD=""
     if [ ! -z ${emulate_disk_aio} ]; then
-      hdd="-drive if=none,id=drive0,cache=directsync,aio=${emulate_disk_aio},format=qcow2,file=${disk_img} -device nvme,drive=drive0,serial=1234"
-      echo " - Disk: ${disk_img} (${disk}). I/O is ${emulate_disk_aio} (choosed by user)."
-    else
-      hdd="-drive if=none,id=drive0,cache=directsync,aio=native,format=qcow2,file=${disk_img} -device nvme,drive=drive0,serial=1234"
-      echo " - Disk: ${disk_img} (${disk}). I/O is native."
+		VDD="-drive if=none,id=drive0,cache=directsync,aio=${emulate_disk_aio},format=qcow2,file=${disk_img}"
+		echo " - Disk: ${disk_img} (${disk}). I/O is ${emulate_disk_aio} (choosed by user)."
+	else
+		VDD="-drive if=none,id=drive0,cache=directsync,aio=native,format=qcow2,file=${disk_img}"
+		echo " - Disk: ${disk_img} (${disk}). I/O is native."
     fi
+
+    # Want a regular SATA HDD? Here you go :
+    # hdd="${VDD} -device ahci,id=ahci -device ide-hd,drive=drive0,bus=ahci.0"
+
+	if [ ! -z ${system_optimization} ] && [ ${system_optimization} -eq 0 ]; then
+		hdd="${VDD} -device virtio-blk-pci,drive=drive0,scsi=off" # Use VirtIO instead of NVMe on Linux
+	else
+		hdd="${VDD} -device nvme,drive=drive0,serial=1234" # Use NVMe instead of VirtIO on Windows
+	fi
   fi
 
   if [ ! -z ${disk_img_snapshot} ]; then
-    echo " - Snapshot: ${disk_img_snapshot}"
+    echo " - Snapshot : ${disk_img_snapshot}"
   fi
 
   # Has the status QUO option been requested?
@@ -333,7 +332,7 @@ function vm_boot() {
     vga_adapter="qxl-vga"
     UI="none"
   else
-    echo " - No/Linux optimization option enabled."
+    echo " - Linux optimization option enabled."
   fi
 
   local output_extra=""
