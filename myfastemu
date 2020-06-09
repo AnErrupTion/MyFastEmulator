@@ -162,8 +162,9 @@ function vm_boot() {
   echo " |--a-aa-a--a---aaa--||||||--${FONT_GREEN}MyFastEmulator${FONT_RESET}--||||||-a-aa-a--a---aaa---|"
   echo " |--a-aa-a--aa--aaa--||||||--${FONT_GREEN}MyFastEmulator${FONT_RESET}--||||||-a-aa-a--aa--aaa---|"
   echo " |--a----a--a---aaaa-|||||||----------------|||||||-a----a--a---aaaa--|"
-  echo " -------------------------|||  Loading...  |||-------------------------"
+  echo " -------------------------|||  ${FONT_GREEN}Loading...${FONT_RESET}  |||-------------------------"
   echo
+  echo "Launcher version ${LAUNCHER_VER}"
 
   local VMDIR=""
   if [ -f "${disk_img}" ]; then
@@ -180,6 +181,9 @@ function vm_boot() {
   # Fix KVM "permission denied" error (https://bugzilla.redhat.com/show_bug.cgi?id=1479558)
   # Run the following command to fix the problem (note that you wanna run it at every startup of your computer) :
   # sudo chown $USER /dev/kvm
+  
+  VM_NAME="mfe-${LAUNCHER_VER}-${VMNAME}"
+  MEM_PATH="/tmp/${VM_NAME}"
 
   if [ ! -z "${guest_ui}" ]; then
     UI="${guest_ui}"
@@ -303,9 +307,8 @@ function vm_boot() {
     second_iso="-drive media=cdrom,file="${second_iso}",index=1"
   fi
 
-  # Since we can have more cores than the host CPU, let's just put all
-  # host's CPU cores by default
-  local cores=$(nproc --all)
+  # Let's use available cores instead of all cores by default
+  local cores=$(grep -c ^processor /proc/cpuinfo)
   if [ ! -z "${total_cores}" ]; then
     cores="${total_cores}"
     echo " - CPU Cores: ${cores} Core(s) (choosed by user)"
@@ -442,13 +445,13 @@ function vm_boot() {
 
   # Boot the VM
   echo " - Launching \"${VM}\" with requested settings."
-  SPICE_PORT=5930
+  
   ${QEMU} \
-    -name ${VMNAME},process=${VMNAME} \
+    -name ${VM_NAME},process=${VMNAME} \
     -machine q35,vmport=off,accel=kvm:tcg,kernel-irqchip=on ${BIOS} -daemonize \
-    -smbios type=2,manufacturer=AnErrupTion,product=MyFastEmulator-v2 \
+    -smbios type=2,manufacturer=AnErrupTion,product=MyFastEmulator,version=${LAUNCHER_VER} \
     ${ccpu}${guest_tweaks} -smp cores=${cores} \
-    -m ${ram} -device virtio-balloon \
+    -m ${ram} -mem-path ${MEM_PATH} -device virtio-balloon \
     ${hdd} ${STATUSQUO} \
     ${iso} ${second_iso} \
     ${display} -display ${UI}${output_extra} \
@@ -462,23 +465,34 @@ function vm_boot() {
     ${virtualization} -seed $(($RANDOM * $RANDOM)) \
     -spice port=${SPICE_PORT},disable-ticketing \
     -device virtio-serial-pci \
+    -chardev spicevmc,id=spicechannel0,name=vdagent \
     -device virtserialport,chardev=spicechannel0,name=com.redhat.spice.0 \
-    -chardev spicevmc,id=spicechannel0,name=vdagent
+    -chardev socket,path=/tmp/qga.sock,server,nowait,id=spicechannel1 \
+    -device virtserialport,chardev=spicechannel1,name=org.qemu.guest_agent.0
+  
   if [ ! -z ${system_optimization} ] && [ ${system_optimization} -eq 1 ]; then
-    # To use virt-viewer :
-    # remote-viewer --title ${VMNAME} spice://127.0.0.1:${SPICE_PORT}
-    spicy --title ${VMNAME} 127.0.0.1 -p ${SPICE_PORT}
-  fi
+	if [ ! -z ${spice_client} ] && [ ${spice_client} -eq 0 ]; then
+		spicy --title ${VM_NAME} 127.0.0.1 -p ${SPICE_PORT}
+	else
+		remote-viewer --title ${VM_NAME} spice://127.0.0.1:${SPICE_PORT}
+	fi
+  fi  
   kill_vm
 }
 
 function kill_vm() {
   read -p " - Press enter to shut down the VM."
   killall ${VMNAME}
-  if [ -e "${EFI_VARS}" ]; then
-    rm "${EFI_VARS}"
+  if [ ! -z ${del_temp_files} ] && [ ${del_temp_files} -eq 1 ]; then
+	echo " - Deleting temporary files..."
+	if [ -e "${EFI_VARS}" ]; then
+		rm "${EFI_VARS}"
+	fi
+	if [ -e "${MEM_PATH}" ]; then
+		rm "${MEM_PATH}"
+	fi
   fi
-  read -p " - The VM has been shut down."
+  echo " - The VM has been shut down."
 }
 
 function usage() {
@@ -498,11 +512,15 @@ function usage() {
 
 readonly QEMU="/home/$USER/qemu-mfe/x86_64-softmmu/qemu-system-x86_64"
 readonly QEMU_IMG="/home/$USER/qemu-mfe/qemu-img"
-readonly LAUNCHER=$(basename "${0}")
-readonly DISK_MIN_SIZE=$((197632 * 8))
+readonly LAUNCHER="$(basename "${0}")"
+readonly DISK_MIN_SIZE="$((197632 * 8))"
 readonly VIRGIL_PATH="/home/$USER/qemu-mfe"
 readonly LAUNCHER_DIR="$(dirname "$(realpath "$0")")"
+readonly LAUNCHER_VER="2.1.0"
+readonly SPICE_PORT=5930
 VMNAME=""
+VM_NAME=""
+MEM_PATH=""
 SNAPSHOT_ACTION=""
 SNAPSHOT_TAG=""
 SNAPSHOT=0
