@@ -24,7 +24,7 @@ function shortcut_create() {
 Name=${VMNAME}
 Comment=Launch QEMU VM ${VMNAME}
 Exec=${LAUNCHER_DIR}/${LAUNCHER} -vm ${LAUNCHER_DIR}/${VM}
-Icon=${VIRGIL_PATH}/pc-bios/qemu-nsis.ico
+Icon=/usr/local/share/icons/hicolor/32x32/apps/qemu.png
 Terminal=true
 Type=Application
 Version=1.0
@@ -208,12 +208,12 @@ function vm_boot() {
 
   local EFI_VARS=""
   if [ ! -z "${efi_bios}" ] && [ "${efi_bios}" -eq 1 ]; then
-    local EFI_CODE="${VIRGIL_PATH}/pc-bios/edk2-x86_64-code.fd"
+    local EFI_CODE="${QEMU_PATH}/edk2-x86_64-code.fd"
     if [ -e "${EFI_CODE}" ] ; then
       EFI_VARS="${VMNAME}-vars.fd"
 
       if [ ! -e "${EFI_VARS}" ]; then
-        cp "${VIRGIL_PATH}/pc-bios/edk2-i386-vars.fd" "${EFI_VARS}"
+        cp "${QEMU_PATH}/edk2-i386-vars.fd" "${EFI_VARS}"
       fi
 
       BIOS="-drive if=pflash,format=raw,readonly,file=${EFI_CODE} -drive if=pflash,format=raw,file=${EFI_VARS}"
@@ -510,11 +510,11 @@ function usage() {
   exit 1
 }
 
-readonly QEMU="/home/$USER/qemu-mfe/x86_64-softmmu/qemu-system-x86_64"
-readonly QEMU_IMG="/home/$USER/qemu-mfe/qemu-img"
+readonly QEMU="/usr/local/bin/qemu-system-x86_64"
+readonly QEMU_IMG="/usr/local/bin/qemu-img"
 readonly LAUNCHER="$(basename "${0}")"
 readonly DISK_MIN_SIZE="$((197632 * 8))"
-readonly VIRGIL_PATH="/home/$USER/qemu-mfe"
+readonly QEMU_PATH="/usr/local/share/qemu"
 readonly LAUNCHER_DIR="$(dirname "$(realpath "$0")")"
 readonly LAUNCHER_VER="2.1.0"
 readonly SPICE_PORT=5930
