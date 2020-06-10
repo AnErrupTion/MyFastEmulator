@@ -21,6 +21,12 @@ where wimpysworld explains some of his motivations for creating the original scr
 
 [![Replace VirtualBox with Bash & QEMU](https://img.youtube.com/vi/AOTYWEgw0hI/0.jpg)](https://www.youtube.com/watch?v=AOTYWEgw0hI)
 
+## Installing QEMU
+
+~~Download and install QEMU v5.0.0 by clicking [here](https://mega.nz/file/sqx3SSzQ#LolQr9IMqCdsaPozRbU21laT5VWz_YlJbYHjbJ-N_Ac)~~
+
+Compile and install QEMU (see instructions in the compile_qemu.txt file)
+
 ## Installation
 
 Clone this repository :
@@ -28,8 +34,6 @@ Clone this repository :
 ```
 git clone --single-branch --branch=mfe-v2 https://github.com/AnErrupTion/MyFastEmulator.git
 ```
-
-Download and install QEMU v5.0.0 by clicking [here](https://mega.nz/file/sqx3SSzQ#LolQr9IMqCdsaPozRbU21laT5VWz_YlJbYHjbJ-N_Ac)
 
 ## Usage
 
