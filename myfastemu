@@ -187,23 +187,23 @@ function vm_boot() {
 
   if [ ! -z "${guest_ui}" ]; then
     UI="${guest_ui}"
-    echo " - UI: ${UI} (choosed by user)"
+    echo " - UI : ${UI} (choosed by user)"
   else
-    echo " - UI: ${UI}"
+    echo " - UI : ${UI}"
   fi
 
   if [ ! -z "${guest_gl}" ]; then
     GL="${guest_gl}"
-    echo " - GL: ${GL} (choosed by user)"
+    echo " - GL : ${GL} (choosed by user)"
   else
-    echo " - GL: ${GL}"
+    echo " - GL : ${GL}"
   fi
 
   if [ ! -z "${guest_virgl}" ]; then
     VIRGL="${guest_virgl}"
-    echo " - VIRGL (Virgil3D): ${VIRGL} (choosed by user)"
+    echo " - VIRGL (Virgil3D) : ${VIRGL} (choosed by user)"
   else
-    echo " - VIRGL (Virgil3D): ${VIRGL}"
+    echo " - VIRGL (Virgil3D) : ${VIRGL}"
   fi
 
   local EFI_VARS=""
@@ -217,12 +217,12 @@ function vm_boot() {
       fi
 
       BIOS="-drive if=pflash,format=raw,readonly,file=${EFI_CODE} -drive if=pflash,format=raw,file=${EFI_VARS}"
-      echo " - BIOS: EFI"
+      echo " - BIOS : EFI"
     else
-        echo " - BIOS: Booting requested from EFI but no EFI firmware found. Booting from Legacy BIOS."
+        echo " - BIOS : Booting requested from EFI but no EFI firmware found. Booting from Legacy BIOS."
     fi
   else
-    echo " - BIOS: Legacy"
+    echo " - BIOS : Legacy"
   fi
 
   local hdd=""
@@ -258,7 +258,7 @@ function vm_boot() {
         # If there is a disk image AND there is an install on it, do not boot from the iso
         iso=""
       else
-        if [ -z "${iso}" ] && [ -z "${img}" ]; then
+        if [ -z "${iso}" ]; then
           echo " - ${FONT_RED}ERROR!${FONT_RESET} You haven't specified an ISO image to boot from."
           exit 1
         fi
@@ -268,10 +268,10 @@ function vm_boot() {
     local VDD=""
     if [ ! -z ${emulate_disk_aio} ]; then
 		VDD="-drive if=none,id=drive0,cache=directsync,aio=${emulate_disk_aio},format=qcow2,file=${disk_img}"
-		echo " - Disk: ${disk_img} (${disk}). I/O is ${emulate_disk_aio} (choosed by user)."
+		echo " - Disk : ${disk_img} (${disk}). I/O is ${emulate_disk_aio} (choosed by user)."
 	else
 		VDD="-drive if=none,id=drive0,cache=directsync,aio=native,format=qcow2,file=${disk_img}"
-		echo " - Disk: ${disk_img} (${disk}). I/O is native."
+		echo " - Disk : ${disk_img} (${disk}). I/O is native."
     fi
 
     # Want a regular SATA HDD? Here you go :
@@ -296,13 +296,13 @@ function vm_boot() {
 
   # Check if there is a boot ISO
   if [ -n "${iso}" ] && [ -e "${iso}" ]; then
-    echo " - Boot ISO: ${iso}"
+    echo " - Boot ISO : ${iso}"
     iso="-drive media=cdrom,file="${iso}",index=0"
   fi
 
   # Check if there is a second ISO
   if [ -n "${second_iso}" ] && [ -e "${second_iso}" ]; then
-    echo " - Second ISO:  ${second_iso}"
+    echo " - Second ISO :  ${second_iso}"
     second_iso="-drive media=cdrom,file="${second_iso}",index=1"
   fi
 
@@ -310,17 +310,17 @@ function vm_boot() {
   local cores=$(grep -c ^processor /proc/cpuinfo)
   if [ ! -z "${total_cores}" ]; then
     cores="${total_cores}"
-    echo " - CPU Cores: ${cores} Core(s) (choosed by user)"
+    echo " - CPU Cores : ${cores} Core(s) (choosed by user)"
   else
-    echo " - CPU Cores: ${cores} Core(s)"
+    echo " - CPU Cores : ${cores} Core(s)"
   fi
 
   local ccpu="host"
   if [ ! -z "${emulated_cpu}" ]; then
     ccpu="${emulated_cpu}"
-    echo " - Emulated CPU: ${ccpu} (choosed by user)"
+    echo " - Emulated CPU : ${ccpu} (choosed by user)"
   else
-    echo " - Emulated CPU: ${ccpu}"
+    echo " - Emulated CPU : ${ccpu}"
   fi
 
   ccpu="-cpu ${ccpu},kvm=on"
@@ -386,29 +386,29 @@ function vm_boot() {
   fi
 
   if [ ! -z "${guest_xres}" ] && [ "${xres}" == "${guest_xres}" ]; then
-    echo " - Width resolution:  ${xres} (choosed by user)"
+    echo " - Width resolution :  ${xres} (choosed by user)"
   else
-    echo " - Width resolution:  ${xres}"
+    echo " - Width resolution :  ${xres}"
   fi
   if [ ! -z "${guest_yres}" ] && [ "${yres}" == "${guest_yres}" ]; then
-    echo " - Height resolution:  ${yres} (choosed by user)"
+    echo " - Height resolution :  ${yres} (choosed by user)"
   else
-    echo " - Height resolution:  ${yres}"
+    echo " - Height resolution :  ${yres}"
   fi
 
   # Determine what display to use
   local display=""
   if [ "${vga_adapter}" == "virtio-vga" ]; then
     display="-device ${vga_adapter},virgl=${VIRGL},xres=${xres},yres=${yres}"
-    echo " - Video: ${vga_adapter}"
+    echo " - Video : ${vga_adapter}"
   elif [ "${vga_adapter}" == "qxl-vga" ]; then
     echo " - ${FONT_YELLOW}WARNING!${FONT_RESET} ${vga_adapter} will have no support for VirGL."
     display="-device ${vga_adapter},xres=${xres},yres=${yres}"
-    echo " - Video: ${vga_adapter}"
+    echo " - Video : ${vga_adapter}"
   else
     echo " - ${FONT_YELLOW}WARNING!${FONT_RESET} ${vga_adapter} will have no support for VirGL."
     display="-device ${vga_adapter},vgamem_mb=${vga_memory},xres=${xres},yres=${yres}"
-    echo " - Video: ${vga_adapter} with ${vga_memory} MB (choosed by user)"
+    echo " - Video : ${vga_adapter} with ${vga_memory} MB (choosed by user)"
   fi
 
   # Set the hostname of the VM
@@ -416,18 +416,18 @@ function vm_boot() {
   # Check if we have samba
   if [ -e "/usr/sbin/smbd" ]; then
     NET="${NET},smb=${HOME}"
-    echo " - samba: ${HOME} will be exported to the guest via smb://10.0.2.4/qemu"
+    echo " - samba : ${HOME} will be exported to the guest via smb://10.0.2.4/qemu"
   else
-    echo " - samba: ${HOME} won't be exported, samba not found."
+    echo " - samba : ${HOME} won't be exported, samba not found."
   fi
 
   # Find a free port to expose ssh to the guest
   local PORT=$(get_port)
   if [ -n "${PORT}" ]; then
     NET="${NET},hostfwd=tcp::${PORT}-:22"
-    echo " - ssh: ${PORT}/tcp is connected. Login via 'ssh user@localhost -p ${PORT}'"
+    echo " - ssh : ${PORT}/tcp is connected. Login via 'ssh user@localhost -p ${PORT}'"
   else
-    echo " - ssh: All ports for exposing ssh have been exhausted."
+    echo " - ssh : All ports for exposing ssh have been exhausted."
   fi
 
   # Has virtualization been requested?
@@ -515,7 +515,7 @@ readonly LAUNCHER="$(basename "${0}")"
 readonly DISK_MIN_SIZE="$((197632 * 8))"
 readonly QEMU_PATH="/usr/local/share/qemu"
 readonly LAUNCHER_DIR="$(dirname "$(realpath "$0")")"
-readonly LAUNCHER_VER="2.1.0"
+readonly LAUNCHER_VER="2.1.1"
 readonly SPICE_PORT=5930
 VMNAME=""
 VM_NAME=""
