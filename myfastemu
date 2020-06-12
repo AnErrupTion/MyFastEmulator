@@ -1,13 +1,6 @@
 #!/usr/bin/env bash
 export LC_ALL=C
 
-FONT_RED=`tput setaf 1`
-FONT_GREEN=`tput setaf 2`
-FONT_YELLOW=`tput setaf 3`
-FONT_BLUE=`tput setaf 4`
-FONT_RESET=`tput sgr0`
-FONT_BOLD=`tput bold`
-
 function shortcut_delete() {
   local SHORTCUT_DIR="/home/${USER}/.local/share/applications"
   if [ -e ~/.local/share/applications/${VMNAME}.desktop ]; then
@@ -24,69 +17,68 @@ function shortcut_create() {
 Name=${VMNAME}
 Comment=Launch QEMU VM ${VMNAME}
 Exec=${LAUNCHER_DIR}/${LAUNCHER} -vm ${LAUNCHER_DIR}/${VM}
-Icon=/usr/local/share/icons/hicolor/32x32/apps/qemu.png
+Icon=${VIRGIL_PATH}/meta/gui/icon.png
 Terminal=true
 Type=Application
 Version=1.0
 EOF
-  chmod 777 ${filename}
   echo " - Created a desktop shortcut for the current VM."
 }
 
 function snapshot_apply() {
   local snapshot_tag="${1}"
   if [ -z "${snapshot_tag}" ]; then
-    echo " - ${FONT_RED}ERROR!${FONT_RESET} No snapshot tag provided."
+    echo " - ERROR! No snapshot tag provided."
     exit
   fi
 
   if [ -e "${disk_img}" ]; then
     ${QEMU_IMG} snapshot -q -a "${snapshot_tag}" "${disk_img}"
     if [ $? -eq 0 ]; then
-      echo " - ${FONT_GREEN}SUCCESS!${FONT_RESET} Applied snapshot ${snapshot_tag} to ${disk_img}."
+      echo " - SUCCESS! Applied snapshot ${snapshot_tag} to ${disk_img}."
     else
-      echo " - ${FONT_RED}ERROR!${FONT_RESET} Failed to apply snapshot ${snapshot_id} to ${disk_img}."
+      echo " - ERROR! Failed to apply snapshot ${snapshot_id} to ${disk_img}."
     fi
   else
-    echo " - ${FONT_RED}ERROR!${FONT_RESET} ${disk_img} not found. Doing nothing."
+    echo " - ERROR! ${disk_img} not found. Doing nothing."
   fi
 }
 
 function snapshot_create() {
   local snapshot_tag="${1}"
   if [ -z "${snapshot_tag}" ]; then
-    echo " - ${FONT_RED}ERROR!${FONT_RESET} No snapshot tag provided."
+    echo " - ERROR! No snapshot tag provided."
     exit
   fi
 
   if [ -e "${disk_img}" ]; then
     ${QEMU_IMG} snapshot -q -c "${snapshot_tag}" "${disk_img}"
     if [ $? -eq 0 ]; then
-      echo " - ${FONT_GREEN}SUCCESS!${FONT_RESET} Created snapshot ${snapshot_tag} of ${disk_img}."
+      echo " - SUCCESS! Created snapshot ${snapshot_tag} of ${disk_img}."
     else
-      echo " - ${FONT_RED}ERROR!${FONT_RESET} Failed to create snapshot ${snapshot_id} of ${disk_img}."
+      echo " - ERROR! Failed to create snapshot ${snapshot_id} of ${disk_img}."
     fi
   else
-    echo " - ${FONT_RED}ERROR!${FONT_RESET} ${disk_img} not found. Doing nothing."
+    echo " - ERROR! ${disk_img} not found. Doing nothing."
   fi
 }
 
 function snapshot_delete() {
   local snapshot_tag="${1}"
   if [ -z "${snapshot_tag}" ]; then
-    echo " - ${FONT_RED}ERROR!${FONT_RESET} No snapshot tag provided."
+    echo " - ERROR! No snapshot tag provided."
     exit
   fi
 
   if [ -e "${disk_img}" ]; then
     ${QEMU_IMG} snapshot -q -d "${snapshot_tag}" "${disk_img}"
     if [ $? -eq 0 ]; then
-      echo " - ${FONT_GREEN}SUCCESS!${FONT_RESET} Deleted snapshot ${snapshot_tag} of ${disk_img}."
+      echo " - SUCCESS! Deleted snapshot ${snapshot_tag} of ${disk_img}."
     else
-      echo " - ${FONT_RED}ERROR!${FONT_RESET} Failed to delete snapshot ${snapshot_id} of ${disk_img}."
+      echo " - ERROR! Failed to delete snapshot ${snapshot_id} of ${disk_img}."
     fi
   else
-    echo " - ${FONT_RED}ERROR!${FONT_RESET} ${disk_img} not found. Doing nothing."
+    echo " - ERROR! ${disk_img} not found. Doing nothing."
   fi
 }
 
@@ -97,8 +89,8 @@ function snapshot_info() {
 }
 
 function get_port() {
-  local PORT_START=$1
-  local PORT_RANGE=$2
+  local PORT_START=22220
+  local PORT_RANGE=9
   while true; do
     local CANDIDATE=$[${PORT_START} + (${RANDOM} % ${PORT_RANGE})]
     (echo "" >/dev/tcp/127.0.0.1/${CANDIDATE}) >/dev/null 2>&1
@@ -146,7 +138,7 @@ function enable_usb_passthrough() {
       echo
       sudo "${TEMP_SCRIPT}"
       if [ $? -ne 0 ]; then
-        echo " - ${FONT_YELLOW}WARNING!${FONT_RESET} Enabling USB device access failed."
+        echo " - WARNING! Enabling USB device access failed."
       fi
     else
       echo " - Requested USB device(s) are accessible."
@@ -158,20 +150,19 @@ function enable_usb_passthrough() {
 function vm_boot() {
   echo
   echo " ----------------------------------------------------------------------"
-  echo " |--aaaaaa--aaa-aaaa-||||||--${FONT_GREEN}MyFastEmulator${FONT_RESET}--||||||-aaaaaa--aaa-aaaa--|"
-  echo " |--a-aa-a--a---aaa--||||||--${FONT_GREEN}MyFastEmulator${FONT_RESET}--||||||-a-aa-a--a---aaa---|"
-  echo " |--a-aa-a--aa--aaa--||||||--${FONT_GREEN}MyFastEmulator${FONT_RESET}--||||||-a-aa-a--aa--aaa---|"
+  echo " |--aaaaaa--aaa-aaaa-||||||--MyFastEmulator--||||||-aaaaaa--aaa-aaaa--|"
+  echo " |--a-aa-a--a---aaa--||||||--MyFastEmulator--||||||-a-aa-a--a---aaa---|"
+  echo " |--a-aa-a--aa--aaa--||||||--MyFastEmulator--||||||-a-aa-a--aa--aaa---|"
   echo " |--a----a--a---aaaa-|||||||----------------|||||||-a----a--a---aaaa--|"
-  echo " -------------------------|||  ${FONT_GREEN}Loading...${FONT_RESET}  |||-------------------------"
+  echo " -------------------------|||  Loading...  |||-------------------------"
   echo
-  echo "Launcher version ${LAUNCHER_VER}"
 
   local VMDIR=""
   if [ -f "${disk_img}" ]; then
     VMDIR=$(dirname "${disk_img}")
   fi
   local BIOS=""
-  local GL="on"
+  local GL="off"
   local VIRGL="off"
   local UI="gtk"
   local QEMU_VER=$(${QEMU} -version | head -n1 | cut -d' ' -f4 | cut -d'(' -f1)
@@ -179,50 +170,61 @@ function vm_boot() {
   echo " - QEMU: ${QEMU} v${QEMU_VER}"
 
   # Fix KVM "permission denied" error (https://bugzilla.redhat.com/show_bug.cgi?id=1479558)
-  # Run the following command to fix the problem (note that you wanna run it at every startup of your computer) :
-  # sudo chown $USER /dev/kvm
-  
-  VM_NAME="mfe-${LAUNCHER_VER}-${VMNAME}"
-  MEM_PATH="/tmp/${VM_NAME}"
+  # Comment this line if you don't have any error related to this.
+  # sudo chown $USER /dev/kvm | OR | sudo chmod 666 /dev/kvm | OR | sudo chmod 777 -R /dev/kvm
 
   if [ ! -z "${guest_ui}" ]; then
     UI="${guest_ui}"
-    echo " - UI : ${UI} (choosed by user)"
+    echo " - UI: ${UI} (choosed by user)"
   else
-    echo " - UI : ${UI}"
+    echo " - UI: ${UI}"
+  fi
+
+  local output_extra=""
+  if [ "${UI}" == "gtk" ]; then
+    output_extra=",grab-on-hover=on,zoom-to-fit=on"
+    if [ "${GL}" == "on" ]; then
+      echo " - GTK UI is currently not compatible with GL. Turning GL off."
+      GL="off"
+    fi
+  fi
+
+  if [ "${UI}" == "spice-app" ] && [ "${GL}" == "on" ]; then
+    echo " - spice-app UI is currently not compatible with GL. Turning GL off."
+    GL="off"
   fi
 
   if [ ! -z "${guest_gl}" ]; then
     GL="${guest_gl}"
-    echo " - GL : ${GL} (choosed by user)"
+    echo " - GL: ${GL} (choosed by user)"
   else
-    echo " - GL : ${GL}"
+    echo " - GL: ${GL}"
   fi
 
   if [ ! -z "${guest_virgl}" ]; then
     VIRGL="${guest_virgl}"
-    echo " - VIRGL (Virgil3D) : ${VIRGL} (choosed by user)"
+    echo " - VIRGL (Virgil3D): ${VIRGL} (choosed by user)"
   else
-    echo " - VIRGL (Virgil3D) : ${VIRGL}"
+    echo " - VIRGL (Virgil3D): ${VIRGL}"
   fi
 
   local EFI_VARS=""
   if [ ! -z "${efi_bios}" ] && [ "${efi_bios}" -eq 1 ]; then
-    local EFI_CODE=$(dpkg --search edk2-x86_64-code.fd | sed 's/qemu: //g')
-    if [ -e ${EFI_CODE} ] ; then
+    if [ -e "${VIRGIL_PATH}/usr/share/qemu/edk2-x86_64-code.fd" ] ; then
+      local EFI_CODE="${VIRGIL_PATH}/usr/share/qemu/edk2-x86_64-code.fd"
       EFI_VARS="${VMNAME}-vars.fd"
 
       if [ ! -e "${EFI_VARS}" ]; then
-        cp $(dpkg --search edk2-i386-vars.fd | sed 's/qemu: //g') ${EFI_VARS}
+        cp "${VIRGIL_PATH}/usr/share/qemu/edk2-i386-vars.fd" "${EFI_VARS}"
       fi
 
       BIOS="-drive if=pflash,format=raw,readonly,file=${EFI_CODE} -drive if=pflash,format=raw,file=${EFI_VARS}"
-      echo " - BIOS : EFI"
+      echo " - BIOS: EFI"
     else
-        echo " - BIOS : Booting requested from EFI but no EFI firmware found. Booting from Legacy BIOS."
+        echo " - BIOS: Booting requested from EFI but no EFI firmware found. Booting from Legacy BIOS."
     fi
   else
-    echo " - BIOS : Legacy"
+    echo " - BIOS: Legacy"
   fi
 
   local hdd=""
@@ -236,7 +238,7 @@ function vm_boot() {
       touch "${disk_img}"
       ${QEMU_IMG} create -q -f qcow2 "${disk_img}" "${disk}"
       if [ $? -ne 0 ]; then
-        echo " - ${FONT_RED}ERROR!${FONT_RESET} Failed to create ${disk_img} of ${disk}. Stopping here."
+        echo " - ERROR! Failed to create ${disk_img} of ${disk}. Stopping here."
         exit 1
       fi
       echo " - Just created a new image, booting from ${iso}."
@@ -259,33 +261,25 @@ function vm_boot() {
         iso=""
       else
         if [ -z "${iso}" ]; then
-          echo " - ${FONT_RED}ERROR!${FONT_RESET} You haven't specified an ISO image to boot from."
+          echo " - ERROR! You haven't specified an ISO image to boot from."
           exit 1
         fi
       fi
     fi
-    
-    local VDD=""
+
+    # This line is for IDE HDD support. However, Windows XP and lower don't work even with an IDE HDD, so here it's useless, at least for now.
+    # hdd="-drive if=none,id=drive0,cache=directsync,aio=native,format=qcow2,file=${disk_img} -device virtio-blk-pci,drive=drive0,scsi=off"
     if [ ! -z ${emulate_disk_aio} ]; then
-		VDD="-drive if=none,id=drive0,cache=directsync,aio=${emulate_disk_aio},format=qcow2,file=${disk_img}"
-		echo " - Disk : ${disk_img} (${disk}). I/O is ${emulate_disk_aio} (choosed by user)."
-	else
-		VDD="-drive if=none,id=drive0,cache=directsync,aio=native,format=qcow2,file=${disk_img}"
-		echo " - Disk : ${disk_img} (${disk}). I/O is native."
+      hdd="-drive if=none,id=drive0,cache=directsync,aio=${emulate_disk_aio},format=qcow2,file=${disk_img} -device ahci,id=ahci -device ide-hd,drive=drive0,bus=ahci.0"
+      echo " - Disk: ${disk_img} (${disk}). I/O is ${emulate_disk_aio} (choosed by user)."
+    else
+      hdd="-drive if=none,id=drive0,cache=directsync,aio=native,format=qcow2,file=${disk_img} -device ahci,id=ahci -device ide-hd,drive=drive0,bus=ahci.0"
+      echo " - Disk: ${disk_img} (${disk}). I/O is native."
     fi
-
-    # Want a regular SATA HDD? Here you go :
-    # hdd="${VDD} -device ahci,id=ahci -device ide-hd,drive=drive0,bus=ahci.0"
-
-	if [ ! -z ${system_optimization} ] && [ ${system_optimization} -eq 0 ]; then
-		hdd="${VDD} -device virtio-blk-pci,drive=drive0,scsi=off" # Use VirtIO instead of NVMe on Linux
-	else
-		hdd="${VDD} -device nvme,drive=drive0,serial=1234" # Use NVMe instead of VirtIO on Windows
-	fi
   fi
 
   if [ ! -z ${disk_img_snapshot} ]; then
-    echo " - Snapshot : ${disk_img_snapshot}"
+    echo " - Snapshot: ${disk_img_snapshot}"
   fi
 
   # Has the status QUO option been requested?
@@ -296,52 +290,52 @@ function vm_boot() {
 
   # Check if there is a boot ISO
   if [ -n "${iso}" ] && [ -e "${iso}" ]; then
-    echo " - Boot ISO : ${iso}"
+    echo " - Boot ISO: ${iso}"
     iso="-drive media=cdrom,file="${iso}",index=0"
   fi
 
   # Check if there is a second ISO
   if [ -n "${second_iso}" ] && [ -e "${second_iso}" ]; then
-    echo " - Second ISO :  ${second_iso}"
+    echo " - Second ISO:  ${second_iso}"
     second_iso="-drive media=cdrom,file="${second_iso}",index=1"
   fi
 
-  # Let's use available cores instead of all cores by default
-  local cores=$(grep -c ^processor /proc/cpuinfo)
+  # Since we can have more cores than the host CPU, let's just put all
+  # the host's CPU cores by default
+  local cores=$(nproc --all)
   if [ ! -z "${total_cores}" ]; then
     cores="${total_cores}"
-    echo " - CPU Cores : ${cores} Core(s) (choosed by user)"
+    echo " - CPU Cores: ${cores} Core(s) (choosed by user)"
   else
-    echo " - CPU Cores : ${cores} Core(s)"
+    echo " - CPU Cores: ${cores} Core(s)"
   fi
 
   local ccpu="host"
   if [ ! -z "${emulated_cpu}" ]; then
     ccpu="${emulated_cpu}"
-    echo " - Emulated CPU : ${ccpu} (choosed by user)"
+    echo " - Emulated CPU: ${ccpu} (choosed by user)"
   else
-    echo " - Emulated CPU : ${ccpu}"
+    echo " - Emulated CPU: ${ccpu}"
   fi
 
   ccpu="-cpu ${ccpu},kvm=on"
   local guest_tweaks=""
   local vga_adapter="virtio-vga"
-  if [ ! -z ${system_optimization} ] && [ ${system_optimization} -eq 1 ]; then
-    echo " - Windows optimization option enabled. Lemme optimize it real quick!"
-    guest_tweaks=",hv_time -no-hpet -no-fd-bootchk"
-    vga_adapter="qxl-vga"
-    UI="none"
+  if [ ! -z ${system_optimization} ]; then
+    if [ ${system_optimization} -eq 1 ]; then
+      echo " - Windows optimization option enabled. Lemme optimize it real quick!"
+      guest_tweaks=",hv_time -no-hpet -no-fd-bootchk"
+      vga_adapter="qxl-vga"
+    elif [ ${system_optimization} -eq 2 ]; then
+      echo " - Mac OS optimization option enabled. Lemme optimize it real quick!"
+      echo " - WARNING! This feature might not work as expected yet."
+      ccpu="-cpu Penryn,vendor=GenuineIntel,kvm=on,+sse3,+sse4.2,+aes,+xsave,+avx,+xsaveopt,+xsavec,+xgetbv1,+avx2,+bmi2,+smep,+bmi1,+fma,+movbe,+invtsc"
+      guest_tweaks=" -device isa-applesmc,osk=\"ourhardworkbythesewordsguardedpleasedontsteal(c)AppleComputerInc\""
+    else
+      echo " - Linux optimization option enabled. No optimization needed!"
+    fi
   else
-    echo " - Linux optimization option enabled."
-  fi
-
-  local output_extra=""
-  if [ "${UI}" == "gtk" ]; then
-    output_extra=",grab-on-hover=on,zoom-to-fit=on"
-  fi
-
-  if [ "${UI}" != "none" ] && [ "${UI}" != "spice-app" ]; then
-    UI="${UI},gl=${GL}"
+    echo " - No optimization option enabled."
   fi
 
   if [ ! -z ${force_classic_vga} ] && [ ${force_classic_vga} -eq 1 ]; then
@@ -365,78 +359,75 @@ function vm_boot() {
     echo " - RAM: ${ram}"
   fi
 
+  local xres=1152
+  local yres=648
+  if [ "${XDG_SESSION_TYPE}" == "x11" ]; then
+    local LOWEST_WIDTH=$(xrandr --listmonitors | grep -v Monitors | cut -d' ' -f4 | cut -d'/' -f1 | sort | head -n1)
+    if [ ${LOWEST_WIDTH} -ge 3840 ]; then
+      xres=3200
+      yres=1800
+    elif [ ${LOWEST_WIDTH} -ge 2560 ]; then
+      xres=2048
+      yres=1152
+    elif [ ${LOWEST_WIDTH} -ge 1920 ]; then
+      xres=1664
+      yres=936
+    elif [ ${LOWEST_WIDTH} -ge 1280 ]; then
+      xres=1152
+      yres=648
+    fi
+  fi
+
   # Guest's max screen resolution
-  local xres=0
-  local yres=0
   if [ ! -z "${guest_xres}" ]; then
     xres=${guest_xres}
+    echo " - Width resolution:  ${xres} (choosed by user)"
   else
-    xres=1280
+    echo " - Width resolution:  ${xres}"
   fi
   if [ ! -z "${guest_yres}" ]; then
     yres=${guest_yres}
+    echo " - Height resolution:  ${yres} (choosed by user)"
   else
-    yres=720
-  fi
-
-  if [ "${XDG_SESSION_TYPE}" == "x11" ] && [ "${fullscreen_mode}" == 1 ]; then
-    xres=$(xrandr --listmonitors | grep -v Monitors | cut -d' ' -f4 | cut -d'/' -f1 | sort | head -n1)
-    yres=$(xrandr --listmonitors | grep -v Monitors | cut -d' ' -f4 | cut -d'/' -f2 | cut -d'x' -f2 | sort | head -n1)
-    echo " - Resolution adjusted for full screen."
-  fi
-
-  if [ ! -z "${guest_xres}" ] && [ "${xres}" == "${guest_xres}" ]; then
-    echo " - Width resolution :  ${xres} (choosed by user)"
-  else
-    echo " - Width resolution :  ${xres}"
-  fi
-  if [ ! -z "${guest_yres}" ] && [ "${yres}" == "${guest_yres}" ]; then
-    echo " - Height resolution :  ${yres} (choosed by user)"
-  else
-    echo " - Height resolution :  ${yres}"
+    echo " - Height resolution:  ${yres}"
   fi
 
   # Determine what display to use
   local display=""
   if [ "${vga_adapter}" == "virtio-vga" ]; then
     display="-device ${vga_adapter},virgl=${VIRGL},xres=${xres},yres=${yres}"
-    echo " - Video : ${vga_adapter}"
+    echo " - Video: ${vga_adapter}"
   elif [ "${vga_adapter}" == "qxl-vga" ]; then
-    echo " - ${FONT_YELLOW}WARNING!${FONT_RESET} ${vga_adapter} will have no support for VirGL."
+    echo " - Warning : ${vga_adapter} will have no support for VirGL."
     display="-device ${vga_adapter},xres=${xres},yres=${yres}"
-    echo " - Video : ${vga_adapter}"
+    echo " - Video: ${vga_adapter}"
   else
-    echo " - ${FONT_YELLOW}WARNING!${FONT_RESET} ${vga_adapter} will have no support for VirGL."
+    echo " - Warning : ${vga_adapter} will have no support for VirGL."
     display="-device ${vga_adapter},vgamem_mb=${vga_memory},xres=${xres},yres=${yres}"
-    echo " - Video : ${vga_adapter} with ${vga_memory} MB (choosed by user)"
+    echo " - Video: ${vga_adapter} with ${vga_memory} MB (choosed by user)"
   fi
 
   # Set the hostname of the VM
   local NET="user,hostname=${VMNAME}"
-  # Check if we have samba
-  if [ -e "/usr/sbin/smbd" ]; then
-    NET="${NET},smb=${HOME}"
-    echo " - Samba : ${HOME} will be exported to the guest via smb://10.0.2.4/qemu"
+  # If smbd is available, export $HOME to the guest via samba
+  if [ -e "${VIRGIL_PATH}/usr/sbin/smbd" ]; then
+      NET="${NET},smb=${HOME}"
+  fi
+
+  if [[ ${NET} == *"smb"* ]]; then
+    echo " - smbd: ${HOME} will be exported to the guest via smb://10.0.2.4/qemu"
   else
-    echo " - Samba : ${HOME} won't be exported, samba not found."
+    echo " - smbd: ${HOME} will not be exported to the guest. \"smbd\" not found."
   fi
 
   # Find a free port to expose ssh to the guest
-  local PORT=$(get_port 22220 9)
+  local PORT=$(get_port)
   if [ -n "${PORT}" ]; then
     NET="${NET},hostfwd=tcp::${PORT}-:22"
-    echo " - SSH : ${PORT}/tcp is connected. Login via 'ssh user@localhost -p ${PORT}'"
+    echo " - ssh: ${PORT}/tcp is connected. Login via 'ssh user@localhost -p ${PORT}'"
   else
-    echo " - SSH : All ports for exposing ssh have been exhausted."
+    echo " - ssh: All ports for exposing ssh have been exhausted."
   fi
-  
-  # Find a free port for spice
-  # local SPICE_PORT=$(get_port 5930 9)
-  # if [ -n "${SPICE_PORT}" ]; then
-  #   echo " - Spice : Found free port '${SPICE_PORT}'"
-  # else
-  #   echo " - Spice : All spice ports have been exhausted."
-  # fi
 
   # Has virtualization been requested?
   local virtualization=""
@@ -452,54 +443,32 @@ function vm_boot() {
 
   # Boot the VM
   echo " - Launching \"${VM}\" with requested settings."
-  
   ${QEMU} \
-    -name ${VM_NAME},process=${VMNAME} \
-    -machine q35,vmport=off,accel=kvm:tcg,kernel-irqchip=on ${BIOS} -daemonize \
-    -smbios type=2,manufacturer=AnErrupTion,product=MyFastEmulator,version=${LAUNCHER_VER} \
+    -name ${VMNAME},process=${VMNAME} \
+    -enable-kvm -accel kvm,thread=multi -machine q35,vmport=off,kernel_irqchip=on ${BIOS} \
+    -smbios type=2,manufacturer=AnErrupTion,product=MyFastEmulator \
     ${ccpu}${guest_tweaks} -smp cores=${cores} \
-    -m ${ram} -mem-path ${MEM_PATH} -device virtio-balloon \
+    -m ${ram} -device virtio-balloon \
     ${hdd} ${STATUSQUO} \
     ${iso} ${second_iso} \
-    ${display} -display ${UI}${output_extra} \
+    ${display} -display ${UI},gl=${GL}${output_extra} \
     -usb -device qemu-xhci,id=xhci,p2=8,p3=8 ${USB_PASSTHROUGH} \
-    -device usb-kbd,bus=xhci.0 -device usb-tablet,bus=xhci.0 \
-    -device e1000,netdev=nic -netdev ${NET},id=nic \
+    -device virtio-keyboard -device virtio-tablet \
+    -device rtl8139,netdev=nic -netdev ${NET},id=nic \
     -audiodev pa,id=pa,server=unix:${XDG_RUNTIME_DIR}/pulse/native,out.stream-name=${LAUNCHER}-${VMNAME},in.stream-name=${LAUNCHER}-${VMNAME} \
     -device intel-hda -device hda-duplex,audiodev=pa,mixer=off \
     -rtc base=localtime,clock=host \
     -object rng-random,id=rng0,filename=/dev/urandom -device virtio-rng-pci,rng=rng0 \
-    ${virtualization} -seed $(($RANDOM * $RANDOM)) \
-    -spice port=${SPICE_PORT},disable-ticketing \
+    ${virtualization} -show-cursor -seed $(($RANDOM * $RANDOM)) \
+    -spice port=5930,disable-ticketing,gl=${GL} \
     -device virtio-serial-pci \
-    -chardev spicevmc,id=spicechannel0,name=vdagent \
     -device virtserialport,chardev=spicechannel0,name=com.redhat.spice.0 \
-    -chardev socket,path=/tmp/qga.sock,server,nowait,id=spicechannel1 \
-    -device virtserialport,chardev=spicechannel1,name=org.qemu.guest_agent.0
-  
-  if [ ! -z ${system_optimization} ] && [ ${system_optimization} -eq 1 ]; then
-	if [ ! -z ${spice_client} ] && [ ${spice_client} -eq 0 ]; then
-		spicy --title ${VM_NAME} 127.0.0.1 -p ${SPICE_PORT}
-	else
-		remote-viewer --title ${VM_NAME} spice://127.0.0.1:${SPICE_PORT}
-	fi
-  fi  
-  kill_vm
-}
-
-function kill_vm() {
-  read -p " - Press enter to shut down the VM."
-  killall ${VMNAME}
-  if [ ! -z ${del_temp_files} ] && [ ${del_temp_files} -eq 1 ]; then
-	echo " - Deleting temporary files..."
-	if [ -e "${EFI_VARS}" ]; then
-		rm "${EFI_VARS}"
-	fi
-	if [ -e "${MEM_PATH}" ]; then
-		rm "${MEM_PATH}"
-	fi
-  fi
+    -chardev spicevmc,id=spicechannel0,name=vdagent \
+    "$@"
   echo " - The VM has been shut down."
+  if [ -e "${EFI_VARS}" ]; then
+    rm "${EFI_VARS}"
+  fi
 }
 
 function usage() {
@@ -517,17 +486,13 @@ function usage() {
   exit 1
 }
 
-readonly QEMU=$(which qemu-system-x86_64)
-readonly QEMU_IMG=$(which qemu-img)
+readonly QEMU="/snap/bin/qemu-virgil"
+readonly QEMU_IMG="/snap/bin/qemu-virgil.qemu-img"
 readonly LAUNCHER=$(basename "${0}")
 readonly DISK_MIN_SIZE=$((197632 * 8))
-readonly QEMU_PATH="/usr/local/share/qemu"
-readonly LAUNCHER_DIR=$(dirname $(realpath "$0"))
-readonly LAUNCHER_VER="2.1.2"
-readonly SPICE_PORT=5930
+readonly VIRGIL_PATH="/snap/qemu-virgil/current"
+readonly LAUNCHER_DIR="$(dirname "$(realpath "$0")")"
 VMNAME=""
-VM_NAME=""
-MEM_PATH=""
 SNAPSHOT_ACTION=""
 SNAPSHOT_TAG=""
 SNAPSHOT=0
@@ -542,13 +507,13 @@ while [ $# -gt 0 ]; do
     -snapshot|--snapshot)
       SNAPSHOT_ACTION="${2}"
       if [ -z "${SNAPSHOT_ACTION}" ]; then
-        echo " - ${FONT_RED}ERROR!${FONT_RESET} No snapshot action provided."
+        echo " - ERROR! No snapshot action provided."
         exit 1
       fi
       shift
       SNAPSHOT_TAG="${2}"
       if [ -z "${SNAPSHOT_TAG}" ] && [ "${SNAPSHOT_ACTION}" != "info" ]; then
-        echo " - ${FONT_RED}ERROR!${FONT_RESET} No snapshot tag provided."
+        echo " - ERROR! No snapshot tag provided."
         exit 1
       fi
       SNAPSHOT=1
@@ -568,26 +533,26 @@ while [ $# -gt 0 ]; do
     -h|--h|-help|--help)
       usage;;
     *)
-    echo " - ${FONT_RED}ERROR!${FONT_RESET} \"${1}\" is not a supported parameter."
+    echo " - ERROR! \"${1}\" is not a supported parameter."
     usage;;
   esac
 done
 
-# Check we have QEMU available
+# Check we have qemu-virgil available
 if [ ! -e "${QEMU}" ] && [ ! -e "${QEMU_IMG}" ]; then
-  echo " - ${FONT_RED}ERROR!${FONT_RESET} QEMU not found. Please compile and install QEMU from our GitHub page."
-  echo "          https://github.com/AnErrupTion/MyFastEmulator/tree/mfe-v2"
+  echo " - ERROR! qemu-virgil not found. Please install the qemu-virgil snap."
+  echo "          https://snapcraft.io/qemu-virgil"
   exit 1
 fi
 
 if [ -n "${VM}" ] && [ -e "${VM}" ]; then
   source "${VM}"
   if [ -z "${disk_img}" ] && [ -f "${no_hdd}" ]; then
-    echo " - ${FONT_RED}ERROR!${FONT_RESET} No disk_img defined."
+    echo " - ERROR! No disk_img defined."
     exit 1
   fi
 else
-  echo " - ${FONT_RED}ERROR!${FONT_RESET} Virtual machine configuration not found."
+  echo " - ERROR! Virtual machine configuration not found."
   usage
 fi
 
@@ -610,7 +575,7 @@ if [ ${SNAPSHOT} -eq 1 ]; then
           snapshot_info
           exit;;
       *)
-    echo " - ${FONT_RED}ERROR!${FONT_RESET} \"${SNAPSHOT_ACTION}\" is not a supported snapshot action."
+    echo " - ERROR! \"${SNAPSHOT_ACTION}\" is not a supported snapshot action."
     usage;;
     esac
   fi
