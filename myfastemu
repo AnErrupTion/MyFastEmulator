@@ -162,7 +162,7 @@ function vm_boot() {
     VMDIR=$(dirname "${disk_img}")
   fi
   local BIOS=""
-  local GL="off"
+  local GL="on"
   local VIRGL="off"
   local UI="gtk"
   local QEMU_VER=$(${QEMU} -version | head -n1 | cut -d' ' -f4 | cut -d'(' -f1)
@@ -267,8 +267,9 @@ function vm_boot() {
       fi
     fi
 
-    # This line is for IDE HDD support. However, Windows XP and lower don't work even with an IDE HDD, so here it's useless, at least for now.
+    # This line is for VirtIO disk support.
     # hdd="-drive if=none,id=drive0,cache=directsync,aio=native,format=qcow2,file=${disk_img} -device virtio-blk-pci,drive=drive0,scsi=off"
+    
     if [ ! -z ${emulate_disk_aio} ]; then
       hdd="-drive if=none,id=drive0,cache=directsync,aio=${emulate_disk_aio},format=qcow2,file=${disk_img} -device ahci,id=ahci -device ide-hd,drive=drive0,bus=ahci.0"
       echo " - Disk: ${disk_img} (${disk}). I/O is ${emulate_disk_aio} (choosed by user)."
