@@ -97,8 +97,8 @@ function snapshot_info() {
 }
 
 function get_port() {
-  local PORT_START=22220
-  local PORT_RANGE=9
+  local PORT_START=$1
+  local PORT_RANGE=$2
   while true; do
     local CANDIDATE=$[${PORT_START} + (${RANDOM} % ${PORT_RANGE})]
     (echo "" >/dev/tcp/127.0.0.1/${CANDIDATE}) >/dev/null 2>&1
@@ -177,10 +177,6 @@ function vm_boot() {
   local QEMU_VER=$(${QEMU} -version | head -n1 | cut -d' ' -f4 | cut -d'(' -f1)
   echo " - Initializing \"${VM}\"'s settings."
   echo " - QEMU: ${QEMU} v${QEMU_VER}"
-
-  # Fix KVM "permission denied" error (https://bugzilla.redhat.com/show_bug.cgi?id=1479558)
-  # Run the following command to fix the problem (note that you wanna run it at every startup of your computer) :
-  # sudo chown $USER /dev/kvm
   
   VM_NAME="mfe-${LAUNCHER_VER}-${VMNAME}"
   MEM_PATH="/tmp/${VM_NAME}"
@@ -208,12 +204,12 @@ function vm_boot() {
 
   local EFI_VARS=""
   if [ ! -z "${efi_bios}" ] && [ "${efi_bios}" -eq 1 ]; then
-    local EFI_CODE="${QEMU_PATH}/edk2-x86_64-code.fd"
-    if [ -e "${EFI_CODE}" ] ; then
+    local EFI_CODE=$(dpkg --search edk2-x86_64-code.fd | sed 's/qemu: //g')
+    if [ -e ${EFI_CODE} ] ; then
       EFI_VARS="${VMNAME}-vars.fd"
 
       if [ ! -e "${EFI_VARS}" ]; then
-        cp "${QEMU_PATH}/edk2-i386-vars.fd" "${EFI_VARS}"
+        cp $(dpkg --search edk2-i386-vars.fd | sed 's/qemu: //g') ${EFI_VARS}
       fi
 
       BIOS="-drive if=pflash,format=raw,readonly,file=${EFI_CODE} -drive if=pflash,format=raw,file=${EFI_VARS}"
@@ -416,19 +412,27 @@ function vm_boot() {
   # Check if we have samba
   if [ -e "/usr/sbin/smbd" ]; then
     NET="${NET},smb=${HOME}"
-    echo " - samba : ${HOME} will be exported to the guest via smb://10.0.2.4/qemu"
+    echo " - Samba : ${HOME} will be exported to the guest via smb://10.0.2.4/qemu"
   else
-    echo " - samba : ${HOME} won't be exported, samba not found."
+    echo " - Samba : ${HOME} won't be exported, samba not found."
   fi
 
   # Find a free port to expose ssh to the guest
-  local PORT=$(get_port)
+  local PORT=$(get_port 22220 9)
   if [ -n "${PORT}" ]; then
     NET="${NET},hostfwd=tcp::${PORT}-:22"
-    echo " - ssh : ${PORT}/tcp is connected. Login via 'ssh user@localhost -p ${PORT}'"
+    echo " - SSH : ${PORT}/tcp is connected. Login via 'ssh user@localhost -p ${PORT}'"
   else
-    echo " - ssh : All ports for exposing ssh have been exhausted."
+    echo " - SSH : All ports for exposing ssh have been exhausted."
   fi
+  
+  # Find a free port for spice
+  # local SPICE_PORT=$(get_port 5930 9)
+  # if [ -n "${SPICE_PORT}" ]; then
+  #   echo " - Spice : Found free port '${SPICE_PORT}'"
+  # else
+  #   echo " - Spice : All spice ports have been exhausted."
+  # fi
 
   # Has virtualization been requested?
   local virtualization=""
@@ -509,13 +513,13 @@ function usage() {
   exit 1
 }
 
-readonly QEMU="/usr/local/bin/qemu-system-x86_64"
-readonly QEMU_IMG="/usr/local/bin/qemu-img"
-readonly LAUNCHER="$(basename "${0}")"
-readonly DISK_MIN_SIZE="$((197632 * 8))"
+readonly QEMU=$(which qemu-system-x86_64)
+readonly QEMU_IMG=$(which qemu-img)
+readonly LAUNCHER=$(basename "${0}")
+readonly DISK_MIN_SIZE=$((197632 * 8))
 readonly QEMU_PATH="/usr/local/share/qemu"
-readonly LAUNCHER_DIR="$(dirname "$(realpath "$0")")"
-readonly LAUNCHER_VER="2.1.1"
+readonly LAUNCHER_DIR=$(dirname $(realpath "$0"))
+readonly LAUNCHER_VER="2.1.2"
 readonly SPICE_PORT=5930
 VMNAME=""
 VM_NAME=""
@@ -565,7 +569,7 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-# Check we have qemu-virgil available
+# Check we have QEMU available
 if [ ! -e "${QEMU}" ] && [ ! -e "${QEMU_IMG}" ]; then
   echo " - ${FONT_RED}ERROR!${FONT_RESET} QEMU not found. Please compile and install QEMU from our GitHub page."
   echo "          https://github.com/AnErrupTion/MyFastEmulator/tree/mfe-v2"
