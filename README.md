@@ -9,7 +9,9 @@
 <p align="center">Made with 💝 for <img src="https://raw.githubusercontent.com/anythingcodes/slack-emoji-for-techies/gh-pages/emoji/tux.png" align="top" width="24" /></p>
 
 ## NOTE
-MyFastEmulator v2 development has started. To download and test it, please go to the branch "mfe-v2".
+I highly recommand to switch to MyFastEmulator v2. It offers way more features, much better performance and more. Just go to the branch "mfe-v2"!
+
+What about MFE v1? It'll probably get discontinued, but I don't know yet.
 
 ## Introduction
 
