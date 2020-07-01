@@ -49,6 +49,11 @@ disk=60G
 ```
 (These are only a few options of MyFastEmulator v2. To see the full list of options, see the `example.conf` file.</a>.)
 
+You can also use our config creator, which makes the process even easier :
+```
+./config-creator
+```
+
   * Use `myfastemu` to start the virtual machine:
 
 ```
