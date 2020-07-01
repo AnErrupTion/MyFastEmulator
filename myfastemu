@@ -302,7 +302,7 @@ function vm_boot() {
     second_iso="-drive media=cdrom,file="${second_iso}",index=1"
   fi
 
-  # Let's use available cores instead of all cores by default
+  # Let's use available cores by default
   local cores=$(grep -c ^processor /proc/cpuinfo)
   if [ ! -z "${total_cores}" ]; then
     cores="${total_cores}"
@@ -356,9 +356,9 @@ function vm_boot() {
 
   if [ ! -z "${ram_gb}" ]; then
     ram="${ram_gb}"
-    echo " - RAM: ${ram} (choosed by user)"
+    echo " - RAM : ${ram} (choosed by user)"
   else
-    echo " - RAM: ${ram}"
+    echo " - RAM : ${ram}"
   fi
 
   # Guest's max screen resolution
@@ -517,7 +517,6 @@ readonly QEMU=$(which qemu-system-x86_64)
 readonly QEMU_IMG=$(which qemu-img)
 readonly LAUNCHER=$(basename "${0}")
 readonly DISK_MIN_SIZE=$((197632 * 8))
-readonly QEMU_PATH="/usr/local/share/qemu"
 readonly LAUNCHER_DIR=$(dirname $(realpath "$0"))
 readonly LAUNCHER_VER="2.1.2"
 readonly SPICE_PORT=5930

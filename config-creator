@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+
+echo "Welcome to the MyFastEmulator config creator!"
+echo "Type the name of the guest :"
+read vmname
+
+echo "Drag & drop the boot ISO :"
+read iso
+iso=$(echo $iso | cut -d "'" -f 2)
+
+echo 'Drag & drop the second ISO (type "" if none) :'
+read second_iso
+second_iso=$(echo $second_iso | cut -d "'" -f 2)
+
+echo "Type the path where the virtual disk drive should be located :"
+read disk_img
+disk_img=$(echo $disk_img | cut -d "'" -f 2)
+
+echo "Type the size of the virtual disk drive (e.g. 60G for 60 gigabytes, 40M for 40 megabytes, etc...) :"
+read disk
+
+echo "Should the I/O of the virtual disk drive be threaded (thread) or native (native)?"
+read emulate_disk_aio
+
+echo "Type the amount of RAM the guest will have (e.g. 4G for 4 gigabytes, 512M for 512 megabytes, etc...) :"
+read ram_gb
+
+echo "Should the guest not save anything wrote to the virtual disk drive? (0/1)"
+read status_quo
+
+echo "How many cores should the guest have?"
+read total_cores
+
+echo "What the guest's window UI should be? (gtk/sdl are the most recommanded)"
+read guest_ui
+
+echo "Should OpenGL be enabled in the guest? (on/off)"
+read guest_gl
+
+echo "Should VirGL be enabled in the guest? (on/off)"
+read guest_virgl
+
+echo "What should be the guest's width resolution?"
+read guest_xres
+
+echo "What should be the guest's height resolution?"
+read guest_yres
+
+echo "Should the temporary guest files be deleted after the guest's shutdown? (0/1)"
+read del_temp_files
+
+echo "What should be the guest's emulated CPU? (host for the host's CPU)"
+read emulated_cpu
+
+echo "Should IOMMU be enabled in the guest? (0/1)"
+read enable_iommu
+
+echo "Should the guest have an EFI bios? (0/1)"
+read efi_bios
+
+echo "Should the guest use fullscreen mode? (0/1)"
+read fullscreen_mode
+
+echo "Should the guest NOT create a HDD? (0/1)"
+read no_hdd
+
+echo "Should the guest be optimized for Linux (0) or Windows (1)?"
+read system_optimization
+
+echo "If the above is 1 (Windows), what should be the SPICE client? Spicy (0) or virt-viewer (1)?"
+read spice_client
+
+echo "Should the guest force the use of a classic VGA graphics card? (0/1)"
+read force_classic_vga
+
+echo "If the above is 1 (yes), how much memory should it have? (in megabytes)"
+read vga_memory
+
+echo "Should any USB device be passthrough'd? (e.g. '0gth:87g1','7f84:4g1r', or for just one, '0gth:87g1')"
+read usb_devices
+
+echo "Should a .desktop shortcut be created for easier access to the guest? (0/1)"
+read vmshortcut
+
+vmfile="${vmname}.conf"
+
+echo "iso=${iso}" >> ${vmfile}
+echo "second_iso=${second_iso}" >> ${vmfile}
+echo "disk_img=${disk_img}/disk_${vmname}.qcow2" >> ${vmfile}
+echo "disk=${disk}" >> ${vmfile}
+echo "emulate_disk_aio=${emulate_disk_aio}" >> ${vmfile}
+echo "ram_gb=${ram_gb}" >> ${vmfile}
+echo "status_quo=${status_quo}" >> ${vmfile}
+echo "total_cores=${total_cores}" >> ${vmfile}
+echo "guest_ui=${guest_ui}" >> ${vmfile}
+echo "guest_gl=${guest_gl}" >> ${vmfile}
+echo "guest_virgl=${guest_virgl}" >> ${vmfile}
+echo "guest_xres=${guest_xres}" >> ${vmfile}
+echo "guest_yres=${guest_yres}" >> ${vmfile}
+echo "del_temp_files=${del_temp_files}" >> ${vmfile}
+echo "spice_client=${spice_client}" >> ${vmfile}
+echo "emulated_cpu=${emulated_cpu}" >> ${vmfile}
+echo "enable_iommu=${enable_iommu}" >> ${vmfile}
+echo "efi_bios=${efi_bios}" >> ${vmfile}
+echo "fullscreen_mode=${fullscreen_mode}" >> ${vmfile}
+echo "no_hdd=${no_hdd}" >> ${vmfile}
+echo "system_optimization=${system_optimization}" >> ${vmfile}
+echo "force_classic_vga=${force_classic_vga}" >> ${vmfile}
+echo "vga_memory=${vga_memory}" >> ${vmfile}
+echo "usb_devices=(${usb_devices})" >> ${vmfile}
+
+if [ "${vmshortcut}" -eq 1 ]; then
+./myfastemu -vm ${vmfile} -shortcut
+fi
