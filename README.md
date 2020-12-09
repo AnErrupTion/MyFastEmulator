@@ -9,9 +9,9 @@
 <p align="center">Made with 💝 for <img src="https://raw.githubusercontent.com/anythingcodes/slack-emoji-for-techies/gh-pages/emoji/tux.png" align="top" width="24" /></p>
 
 ## NOTE
-I highly recommand to switch to MyFastEmulator v2. It offers way more features, much better performance and more. Just go to the branch "mfe-v2"!
-
-What about MFE v1? It'll probably get discontinued, but I don't know yet.
+MFE v1 : First version, discontinued with no updates.
+MFE v2 : Second version, discontinued with stability updates and bug fixes.
+MFE v3 : Latest version, see the "mfe-v3" branch.
 
 ## Introduction
 
