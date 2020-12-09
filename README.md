@@ -9,8 +9,8 @@
 <p align="center">Made with 💝 for <img src="https://raw.githubusercontent.com/anythingcodes/slack-emoji-for-techies/gh-pages/emoji/tux.png" align="top" width="24" /></p>
 
 ## NOTE
-MFE v1 : First version, discontinued with no updates.
-MFE v2 : Second version, discontinued with stability updates and bug fixes.
+MFE v1 : First version, discontinued with no updates.<br />
+MFE v2 : Second version, discontinued with stability updates and bug fixes.<br />
 MFE v3 : Latest version, see the "mfe-v3" branch.
 
 ## Introduction
